@@ -1,0 +1,266 @@
+syntax = "proto3";
+
+package apexos.common.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/common/v1";
+option java_package = "io.apexos.axel.common.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Common.V1";
+
+// Common types used across all services
+
+// ULID as string
+message ULID {
+  string value = 1;
+}
+
+// UUID as string
+message UUID {
+  string value = 1;
+}
+
+// Timestamp in milliseconds since Unix epoch
+message Timestamp {
+  int64 millis = 1;
+}
+
+// Duration in milliseconds
+message Duration {
+  int64 millis = 1;
+}
+
+// Pagination request
+message PaginationRequest {
+  uint32 page = 1;
+  uint32 per_page = 2;
+}
+
+// Pagination response
+message PaginationResponse {
+  uint32 current_page = 1;
+  uint32 per_page = 2;
+  uint64 total_items = 3;
+  uint32 total_pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}
+
+// Sort request
+message SortRequest {
+  string field = 1;
+  SortDirection direction = 2;
+}
+
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+// Filter request
+message FilterRequest {
+  string field = 1;
+  FilterOperator operator = 2;
+  google.protobuf.Value value = 3;
+}
+
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  FILTER_OPERATOR_EQ = 1;
+  FILTER_OPERATOR_NE = 2;
+  FILTER_OPERATOR_GT = 3;
+  FILTER_OPERATOR_GTE = 4;
+  FILTER_OPERATOR_LT = 5;
+  FILTER_OPERATOR_LTE = 6;
+  FILTER_OPERATOR_IN = 7;
+  FILTER_OPERATOR_NOT_IN = 8;
+  FILTER_OPERATOR_CONTAINS = 9;
+  FILTER_OPERATOR_STARTS_WITH = 10;
+  FILTER_OPERATOR_ENDS_WITH = 11;
+  FILTER_OPERATOR_IS_NULL = 12;
+  FILTER_OPERATOR_IS_NOT_NULL = 13;
+  FILTER_OPERATOR_BETWEEN = 14;
+}
+
+// List request
+message ListRequest {
+  PaginationRequest pagination = 1;
+  SortRequest sort = 2;
+  repeated FilterRequest filters = 3;
+  string search = 4;
+  repeated string include = 5;
+}
+
+// List response
+message ListResponse {
+  repeated google.protobuf.Any items = 1;
+  PaginationResponse pagination = 2;
+}
+
+// Error response
+message ErrorResponse {
+  ErrorDetail error = 1;
+}
+
+message ErrorDetail {
+  string code = 1;
+  string message = 2;
+  string correlation_id = 3;
+  string event_id = 4;
+  map<string, string> context = 5;
+}
+
+// Health check
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+  string timestamp = 3;
+  map<string, ComponentHealth> checks = 4;
+}
+
+message ComponentHealth {
+  string status = 1;
+  string message = 2;
+}
+
+// Metadata for requests
+message RequestMetadata {
+  string correlation_id = 1;
+  string causation_id = 2;
+  string tenant_id = 3;
+  string organization_id = 4;
+  string user_id = 5;
+  map<string, string> attributes = 6;
+}
+
+// Empty response
+message Empty {}
+
+// Common identifiers
+message UserId {
+  string value = 1;
+}
+
+message OrganizationId {
+  string value = 1;
+}
+
+message TenantId {
+  string value = 1;
+}
+
+message CourseId {
+  string value = 1;
+}
+
+message EnrollmentId {
+  string value = 1;
+}
+
+message AssignmentId {
+  string value = 1;
+}
+
+message SubmissionId {
+  string value = 1;
+}
+
+message MediaId {
+  string value = 1;
+}
+
+message RoleId {
+  string value = 1;
+}
+
+message PermissionId {
+  string value = 1;
+}
+
+message SessionId {
+  string value = 1;
+}
+
+message JobId {
+  string value = 1;
+}
+
+message WorkflowId {
+  string value = 1;
+}
+
+message CertificateId {
+  string value = 1;
+}
+
+message BadgeId {
+  string value = 1;
+}
+
+// Money amount
+message Money {
+  int64 amount = 1; // Minor units (cents)
+  string currency = 2; // ISO 4217
+}
+
+// Locale (BCP 47)
+message Locale {
+  string code = 1;
+}
+
+// MIME type
+message MimeType {
+  string type = 1;
+}
+
+// File size
+message FileSize {
+  uint64 bytes = 1;
+}
+
+// IP address
+message IpAddress {
+  string value = 1;
+}
+
+// Email address
+message EmailAddress {
+  string value = 1;
+}
+
+// Phone number (E.164)
+message PhoneNumber {
+  string value = 1;
+}
+
+// URL
+message Url {
+  string value = 1;
+}
+
+// Geo location
+message GeoLocation {
+  string country = 1;
+  string country_code = 2;
+  string region = 3;
+  string city = 4;
+  double latitude = 5;
+  double longitude = 6;
+  string timezone = 7;
+  string isp = 8;
+  string organization = 9;
+}
+
+// User agent info
+message UserAgentInfo {
+  string raw = 1;
+  string browser = 2;
+  string browser_version = 3;
+  string os = 4;
+  string os_version = 5;
+  string device = 6;
+  bool is_mobile = 7;
+  bool is_bot = 8;
+}

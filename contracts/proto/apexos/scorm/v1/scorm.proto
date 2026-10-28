@@ -1,0 +1,701 @@
+syntax = "proto3";
+
+package apexos.scorm.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/scorm/v1";
+option java_package = "io.apexos.axel.scorm.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Scorm.V1";
+
+import "apexos/common/v1/common.proto";
+
+// SCORM 2004 4th Edition / 1.2 service
+
+service ScormService {
+  // Package management
+  rpc UploadPackage(UploadPackageRequest) returns (UploadPackageResponse);
+  rpc GetPackage(GetPackageRequest) returns (ScormPackage);
+  rpc UpdatePackage(UpdatePackageRequest) returns (ScormPackage);
+  rpc DeletePackage(DeletePackageRequest) returns (apexos.common.v1.Empty);
+  rpc ListPackages(ListPackagesRequest) returns (ListPackagesResponse);
+  rpc ValidatePackage(ValidatePackageRequest) returns (ValidatePackageResponse);
+  rpc ImportPackage(ImportPackageRequest) returns (ScormPackage);
+  rpc ExportPackage(ExportPackageRequest) returns (ExportPackageResponse);
+  
+  // Runtime (launch/play)
+  rpc CreateRegistration(CreateRegistrationRequest) returns (Registration);
+  rpc GetRegistration(GetRegistrationRequest) returns (Registration);
+  rpc LaunchRegistration(LaunchRegistrationRequest) returns (LaunchRegistrationResponse);
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+  rpc Terminate(TerminateRequest) returns (TerminateResponse);
+  rpc GetValue(GetValueRequest) returns (GetValueResponse);
+  rpc SetValue(SetValueRequest) returns (SetValueResponse);
+  rpc Commit(CommitRequest) returns (CommitResponse);
+  rpc GetLastError(GetLastErrorRequest) returns (GetLastErrorResponse);
+  rpc GetErrorString(GetErrorStringRequest) returns (GetErrorStringResponse);
+  rpc GetDiagnostic(GetDiagnosticRequest) returns (GetDiagnosticResponse);
+  
+  // Sequencing and Navigation
+  rpc NavigationRequest(NavigationRequestRequest) returns (NavigationRequestResponse);
+  rpc GetAvailableCommands(GetAvailableCommandsRequest) returns (GetAvailableCommandsResponse);
+  
+  // Progress tracking
+  rpc GetRegistrationProgress(GetRegistrationProgressRequest) returns (RegistrationProgress);
+  rpc UpdateRegistrationProgress(UpdateRegistrationProgressRequest) returns (RegistrationProgress);
+  
+  // Data model
+  rpc GetDataModel(GetDataModelRequest) returns (DataModel);
+  rpc SetDataModel(SetDataModelRequest) returns (apexos.common.v1.Empty);
+  
+  // Reports
+  rpc GetPackageReport(GetPackageReportRequest) returns (PackageReport);
+  rpc GetRegistrationReport(GetRegistrationReportRequest) returns (RegistrationReport);
+}
+
+// SCORM Package
+message ScormPackage {
+  string id = 1;
+  string tenant_id = 2;
+  string organization_id = 3;
+  string title = 4;
+  string version = 5; // 2004 4th Edition, 1.2
+  string identifier = 6; // From imsmanifest.xml
+  ScormMetadata metadata = 7;
+  PackageManifest manifest = 8;
+  PackageStatus status = 9;
+  uint64 size = 10; // bytes
+  string checksum = 11; // SHA256
+  string storage_key = 12;
+  apexos.common.v1.Timestamp uploaded_at = 13;
+  apexos.common.v1.Timestamp created_at = 14;
+  apexos.common.v1.Timestamp updated_at = 15;
+  string uploaded_by = 16;
+}
+
+message ScormMetadata {
+  string schema = 1; // ADL SCORM, ADL SCORM_CAM, ADL SCORM_RTE
+  string schemaversion = 2; // 2004 4th Edition, 1.2
+  string title = 3;
+  string language = 4;
+  string description = 5;
+  string keywords = 6;
+  string author = 7;
+  string version = 8;
+  string status = 9; // Draft, Final, Revised, Unavailable
+  string date = 10;
+  repeated Contribute contribute = 11;
+  repeated Relation relation = 12;
+  string aggregation_level = 13; // 1, 2, 3, 4
+  string structure = 14; // Atomic, Collection, Networked, Hierarchical, Linear
+  string typical_learning_time = 15; // ISO 8601 duration
+  string difficulty = 16; // Very Easy, Easy, Medium, Difficult, Very Difficult
+  string interactivity_type = 17; // Active, Expositive, Mixed
+  string interactivity_level = 18; // Very Low, Low, Medium, High, Very High
+  string semantic_density = 19; // Very Low, Low, Medium, High, Very High
+  string intended_end_user_role = 20; // Teacher, Author, Learner, Manager
+  string context = 21; // School, Higher Education, Training, Other
+  string typical_age_range = 22;
+  repeated string rights = 23;
+  repeated Classification classification = 24;
+}
+
+message Contribute {
+  string role = 1; // Author, Publisher, Validator, etc.
+  string entity = 2;
+  string date = 3;
+}
+
+message Relation {
+  string kind = 1; // IsPartOf, HasPart, IsVersionOf, etc.
+  string resource_identifier = 2.
+  string resource_description = 3.
+}
+
+message Classification {
+  string purpose = 1.
+  string taxon_path = 2.
+  string description = 3.
+  string keyword = 4.
+}
+
+message PackageManifest {
+  string identifier = 1.
+  string version = 2.
+  string base = 3.
+  Organizations organizations = 4.
+  Resources resources = 5.
+  Sequencing sequencing = 6.
+  map<string, string> metadata = 7.
+}
+
+message Organizations {
+  string default_organization = 1.
+  repeated Organization organizations = 2.
+}
+
+message Organization {
+  string identifier = 1.
+  string title = 2.
+  string structure = 3.
+  repeated Item items = 4.
+  Objectives objectives = 5.
+  Sequencing sequencing = 6.
+}
+
+message Item {
+  string identifier = 1.
+  string identifierref = 2.
+  string title = 3.
+  string isvisible = 4. // true, false
+  string parameters = 5.
+  string mastery_score = 6.
+  repeated Item items = 7.
+  Objectives objectives = 8.
+  TimeLimitAction time_limit_action = 9.
+  DataFromLMS data_from_lms = 10.
+  CompletionThreshold completion_threshold = 11.
+  Sequencing sequencing = 12.
+  Presentation presentation = 13.
+}
+
+message Objectives {
+  repeated Objective objectives = 1.
+}
+
+message Objective {
+  string objective_id = 1.
+  string title = 2.
+  repeated MapInfo map_info = 3.
+}
+
+message MapInfo {
+  string target_objective_id = 1.
+  string read_satisfied_status = 2.
+  string write_satisfied_status = 3.
+  string read_normalized_measure = 4.
+  string write_normalized_measure = 5.
+  string read_raw_score = 6.
+  string write_raw_score = 7.
+  string read_min_normalized_measure = 8.
+  string write_min_normalized_measure = 9.
+}
+
+enum TimeLimitAction {
+  TIME_LIMIT_ACTION_UNSPECIFIED = 0;
+  TIME_LIMIT_ACTION_EXIT_MESSAGE = 1;
+  TIME_LIMIT_ACTION_CONTINUE = 2;
+}
+
+message DataFromLMS {
+  string mode = 1. // Normal, Review, Browse
+}
+
+message CompletionThreshold {
+  double progress = 1. // 0.0 - 1.0
+}
+
+message Resources {
+  repeated Resource resources = 1.
+  repeated File files = 2.
+  repeated Dependency dependencies = 3.
+}
+
+message Resource {
+  string identifier = 1.
+  string type = 2. // webcontent, scorm, asset, etc.
+  string href = 3.
+  string scorm_type = 4. // sco, asset
+  repeated File files = 5.
+  repeated Dependency dependencies = 6.
+  Metadata metadata = 7.
+}
+
+message File {
+  string href = 1.
+  string type = 2. // mime type
+}
+
+message Dependency {
+  string identifierref = 1.
+}
+
+message Metadata {
+  map<string, string> custom = 1.
+}
+
+message Sequencing {
+  string control_mode = 1. // Flow, Choice, Forward Only, etc.
+  repeated SequencingRule sequencing_rules = 2.
+  ObjectiveSequence objective_sequences = 3.
+  DeliveryControls delivery_controls = 4.
+  RollupRules rollup_rules = 5.
+  Tracked tracked = 6.
+  AttemptCount attempt_count = 7.
+  AttemptDuration attempt_duration = 8.
+  SequencingConstraints constraints = 9.
+  AuxiliaryResources auxiliary_resources = 10.
+}
+
+message SequencingRule {
+  string condition = 1. // Satisfied, Objective Status Known, etc.
+  string action = 2. // Skip, Disable, Hide, etc.
+  string rule_conditions = 3. // All, Any
+}
+
+message ObjectiveSequence {
+  string objective_id = 1.
+  repeated string primary_objective = 2.
+  repeated string secondary_objectives = 3.
+}
+
+message DeliveryControls {
+  bool tracked = 1.
+  bool completion_set_by_content = 2.
+  bool objective_set_by_content = 3.
+}
+
+message RollupRules {
+  string rollup_objective_satisfied = 1. // Always, If Not Suspended, If Attempted
+  string rollup_progress_completion = 2. // Always, If Not Suspended, If Attempted
+  repeated RollupCondition rollup_conditions = 3.
+  string child_activity_set = 4. // All, Any, At Least Count, At Least Percent
+  int32 minimum_count = 5.
+  double minimum_percent = 6.
+}
+
+message RollupCondition {
+  string condition = 1. // Satisfied, Objective Status Known, etc.
+  string operator = 2. // And, Or
+}
+
+message Tracked {
+  bool tracked = 1.
+}
+
+message AttemptCount {
+  int32 max_attempts = 1.
+  string action = 2. // Increment, Reset
+}
+
+message AttemptDuration {
+  string max_duration = 1. // ISO 8601
+  string limit_action = 2. // Exit Message, Continue
+}
+
+message SequencingConstraints {
+  string choice = 1. // True, False
+  string choice_exit = 2. // True, False
+  string flow = 3. // True, False
+  string forward_only = 4. // True, False
+  string use_current_attempt_objective_info = 5. // True, False
+  string use_current_attempt_progress_info = 6. // True, False
+}
+
+message AuxiliaryResources {
+  repeated AuxiliaryResource resources = 1.
+}
+
+message AuxiliaryResource {
+  string type = 1. // Help, Hint, Reference, etc.
+  string src = 2.
+}
+
+message Presentation {
+  string navigation_interface = 1. // Hide, Show, Disable
+  string progress_interface = 2.
+  string table_of_contents = 3.
+  string auxiliary_resources = 4.
+}
+
+message PackageStatus {
+  PACKAGE_STATUS_UNSPECIFIED = 0;
+  PACKAGE_STATUS_UPLOADING = 1;
+  PACKAGE_STATUS_VALIDATING = 2;
+  PACKAGE_STATUS_VALID = 3;
+  PACKAGE_STATUS_INVALID = 4;
+  PACKAGE_STATUS_PROCESSING = 5;
+  PACKAGE_STATUS_READY = 6;
+  PACKAGE_STATUS_ERROR = 7;
+  PACKAGE_STATUS_DELETED = 8;
+}
+
+// Registration (Runtime)
+message Registration {
+  string id = 1;
+  string package_id = 2;
+  string user_id = 3;
+  string course_id = 4;
+  string registration_id = 5; // External LMS registration ID
+  RegistrationStatus status = 6;
+  ScormDataModel data_model = 7;
+  RegistrationProgress progress = 8;
+  string current_activity_id = 9;
+  apexos.common.v1.Timestamp created_at = 10.
+  apexos.common.v1.Timestamp launched_at = 11.
+  apexos.common.v1.Timestamp last_activity_at = 12.
+  apexos.common.v1.Timestamp completed_at = 13.
+  apexos.common.v1.Duration total_time = 14.
+  string exit_type = 15. // Normal, Suspend, TimeOut, Logout
+  string suspend_data = 16.
+}
+
+enum RegistrationStatus {
+  REGISTRATION_STATUS_UNSPECIFIED = 0;
+  REGISTRATION_STATUS_NOT_STARTED = 1;
+  REGISTRATION_STATUS_IN_PROGRESS = 2;
+  REGISTRATION_STATUS_SUSPENDED = 3;
+  REGISTRATION_STATUS_COMPLETED = 4;
+  REGISTRATION_STATUS_FAILED = 5;
+}
+
+message ScormDataModel {
+  // Student Data
+  string student_id = 1.
+  string student_name = 2.
+  string lesson_location = 3.
+  string credit = 4. // credit, no-credit
+  string lesson_status = 5. // passed, failed, completed, incomplete, browsed, not attempted
+  double score_raw = 6.
+  double score_min = 7.
+  double score_max = 8.
+  double score_scaled = 9. // -1.0 to 1.0
+  double total_time = 10. // seconds
+  string lesson_mode = 11. // normal, browse, review
+  string exit = 12. // normal, suspend, timeout, logout
+  string session_time = 13. // HHHH:MM:SS.SS
+  string suspend_data = 14.
+  string launch_data = 15.
+  string comments = 16.
+  repeated ObjectiveProgress objectives = 17.
+  repeated Interaction interactions = 18.
+  StudentPreference preferences = 19.
+}
+
+message ObjectiveProgress {
+  string objective_id = 1.
+  string status = 2. // satisfied, not satisfied
+  double normalized_measure = 3. // -1.0 to 1.0
+  double raw_score = 4.
+  double min_score = 5.
+  double max_score = 6.
+}
+
+message Interaction {
+  string id = 1.
+  string type = 2. // true-false, choice, fill-in, matching, performance, sequencing, likert, numeric, other
+  string objectives = 3.
+  string timestamp = 4. // ISO 8601
+  string correct_responses = 5.
+  double weight = 6.
+  string student_response = 7.
+  string result = 8. // correct, incorrect, unanticipated, neutral
+  double latency = 9. // seconds
+  string description = 10.
+}
+
+message StudentPreference {
+  string audio_level = 1. // 0.0 - 1.0
+  string language = 2.
+  string delivery_speed = 3. // 0.0 - 1.0
+  string audio_captioning = 4. // -1.0 to 1.0
+}
+
+message RegistrationProgress {
+  double completion_percentage = 1.
+  repeated string visited_activities = 2.
+  repeated string completed_activities = 3.
+  string current_activity = 4.
+  double score = 5.
+  string status = 6.
+  apexos.common.v1.Duration time_spent = 7.
+}
+
+// Requests
+message UploadPackageRequest {
+  string tenant_id = 1.
+  string organization_id = 2.
+  string filename = 3.
+  uint64 size = 4.
+  string checksum = 5.
+  bytes data = 6.
+}
+
+message UploadPackageResponse {
+  string package_id = 1.
+  string upload_url = 2. // For multipart
+  string upload_id = 3.
+  repeated string part_urls = 4.
+}
+
+message GetPackageRequest {
+  string id = 1.
+  bool include_manifest = 2.
+}
+
+message UpdatePackageRequest {
+  string id = 1.
+  string title = 2.
+  ScormMetadata metadata = 3.
+}
+
+message DeletePackageRequest {
+  string id = 1.
+}
+
+message ListPackagesRequest {
+  string tenant_id = 1.
+  string organization_id = 2.
+  string search = 3.
+  PackageStatus status = 4.
+  apexos.common.v1.PaginationRequest pagination = 5.
+}
+
+message ListPackagesResponse {
+  repeated ScormPackage packages = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message ValidatePackageRequest {
+  string package_id = 1.
+}
+
+message ValidatePackageResponse {
+  bool valid = 1.
+  repeated ValidationError errors = 2.
+  repeated ValidationWarning warnings = 3.
+  ScormMetadata extracted_metadata = 4.
+}
+
+message ValidationError {
+  string code = 1.
+  string message = 2.
+  string file = 3.
+  int32 line = 4.
+  string xpath = 5.
+}
+
+message ValidationWarning {
+  string code = 1.
+  string message = 2.
+  string file = 3.
+  int32 line = 4.
+}
+
+message ImportPackageRequest {
+  string tenant_id = 1.
+  string organization_id = 2.
+  string import_url = 3.
+  string title = 4.
+}
+
+message ExportPackageRequest {
+  string package_id = 1.
+  ExportFormat format = 2.
+}
+
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_ZIP = 1;
+  EXPORT_FORMAT_JSON = 2;
+}
+
+message ExportPackageResponse {
+  string download_url = 1.
+  apexos.common.v1.Timestamp expires_at = 2.
+}
+
+// Registration management
+message CreateRegistrationRequest {
+  string package_id = 1.
+  string user_id = 2.
+  string course_id = 3.
+  string registration_id = 4.
+  ScormDataModel initial_data = 5.
+}
+
+message GetRegistrationRequest {
+  string id = 1.
+  bool include_data_model = 2.
+}
+
+// Launch
+message LaunchRegistrationRequest {
+  string registration_id = 1.
+  string launch_url = 2. // Where to redirect
+  map<string, string> launch_parameters = 3.
+}
+
+message LaunchRegistrationResponse {
+  string launch_url = 1.
+  map<string, string> launch_data = 2. // For LTI launch
+  string session_id = 3.
+}
+
+// Runtime API
+message InitializeRequest {
+  string registration_id = 1.
+}
+
+message InitializeResponse {
+  bool success = 1.
+  string error_code = 2.
+  string error_string = 3.
+}
+
+message TerminateRequest {
+  string registration_id = 1.
+  string exit_type = 2. // normal, suspend, timeout, logout
+}
+
+message TerminateResponse {
+  bool success = 1.
+  string error_code = 2.
+  string error_string = 3.
+}
+
+message GetValueRequest {
+  string registration_id = 1.
+  string element = 2. // e.g., cmi.core.student_id
+}
+
+message GetValueResponse {
+  string value = 1.
+  string error_code = 2.
+  string error_string = 3.
+}
+
+message SetValueRequest {
+  string registration_id = 1.
+  string element = 2.
+  string value = 3.
+}
+
+message SetValueResponse {
+  bool success = 1.
+  string error_code = 2.
+  string error_string = 3.
+}
+
+message CommitRequest {
+  string registration_id = 1.
+}
+
+message CommitResponse {
+  bool success = 1.
+  string error_code = 2.
+  string error_string = 3.
+}
+
+message GetLastErrorRequest {
+  string registration_id = 1.
+}
+
+message GetLastErrorResponse {
+  string error_code = 1.
+}
+
+message GetErrorStringRequest {
+  string registration_id = 1.
+  string error_code = 2.
+}
+
+message GetErrorStringResponse {
+  string error_string = 1.
+}
+
+message GetDiagnosticRequest {
+  string registration_id = 1.
+}
+
+message GetDiagnosticResponse {
+  string diagnostic = 1.
+}
+
+// Navigation
+message NavigationRequestRequest {
+  string registration_id = 1.
+  string navigation_command = 2. // continue, previous, choice, jump, exit, exitAll, abandon, abandonAll, suspendAll
+  string target_activity_id = 3. // For choice, jump
+}
+
+message NavigationRequestResponse {
+  bool success = 1.
+  string next_activity_id = 2.
+  string error_code = 3.
+  string error_string = 4.
+  string termination_message = 5.
+}
+
+message GetAvailableCommandsRequest {
+  string registration_id = 1.
+}
+
+message GetAvailableCommandsResponse {
+  repeated string commands = 1.
+  repeated string available_activities = 2.
+}
+
+// Progress
+message GetRegistrationProgressRequest {
+  string registration_id = 1.
+}
+
+message UpdateRegistrationProgressRequest {
+  string registration_id = 1.
+  RegistrationProgress progress = 2.
+}
+
+// Data model
+message GetDataModelRequest {
+  string registration_id = 1.
+}
+
+message DataModel {
+  ScormDataModel student_data = 1.
+  map<string, string> custom = 2.
+}
+
+message SetDataModelRequest {
+  string registration_id = 1.
+  ScormDataModel data = 2.
+}
+
+// Reports
+message GetPackageReportRequest {
+  string package_id = 1.
+  apexos.common.v1.Timestamp start_date = 2.
+  apexos.common.v1.Timestamp end_date = 3.
+}
+
+message PackageReport {
+  string package_id = 1.
+  int64 total_registrations = 2.
+  int64 completed_registrations = 3.
+  double average_score = 4.
+  double average_time = 5. // seconds
+  double completion_rate = 6.
+  repeated ActivityReport activities = 7.
+}
+
+message ActivityReport {
+  string activity_id = 1.
+  string activity_title = 2.
+  int64 attempts = 3.
+  int64 completions = 4.
+  double average_score = 5.
+  double average_time = 6.
+}
+
+message GetRegistrationReportRequest {
+  string registration_id = 1.
+}
+
+message RegistrationReport {
+  string registration_id = 1.
+  ScormDataModel final_data = 2.
+  repeated Interaction interactions = 3.
+  repeated ObjectiveProgress objectives = 4.
+  RegistrationProgress progress = 5.
+  apexos.common.v1.Duration total_time = 6.
+  string exit_type = 7.
+}

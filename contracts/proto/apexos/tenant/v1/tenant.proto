@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package apexos.tenant.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/tenant/v1";
+option java_package = "io.apexos.axel.tenant.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Tenant.V1";
+
+import "apexos/common/v1/common.proto";
+
+// Tenant management service
+
+service TenantService {
+  // Tenant CRUD
+  rpc CreateTenant(CreateTenantRequest) returns (Tenant);
+  rpc GetTenant(GetTenantRequest) returns (Tenant);
+  rpc UpdateTenant(UpdateTenantRequest) returns (Tenant);
+  rpc DeleteTenant(DeleteTenantRequest) returns (apexos.common.v1.Empty);
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
+  
+  // Tenant status
+  rpc SuspendTenant(SuspendTenantRequest) returns (Tenant);
+  rpc ActivateTenant(ActivateTenantRequest) returns (Tenant);
+  
+  // Tenant resolution
+  rpc ResolveTenant(ResolveTenantRequest) returns (ResolveTenantResponse);
+  rpc GetTenantByDomain(GetTenantByDomainRequest) returns (Tenant);
+  rpc GetTenantBySubdomain(GetTenantBySubdomainRequest) returns (Tenant);
+  
+  // Feature flags
+  rpc GetFeatureFlags(GetFeatureFlagsRequest) returns (GetFeatureFlagsResponse);
+  rpc SetFeatureFlag(SetFeatureFlagRequest) returns (FeatureFlag);
+  rpc EvaluateFeatureFlag(EvaluateFeatureFlagRequest) returns (EvaluateFeatureFlagResponse);
+  
+  // Organizations within tenant
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+}
+
+// Tenant
+message Tenant {
+  string id = 1;
+  string name = 2;
+  string display_name = 3;
+  string domain = 4;
+  string subdomain = 5;
+  TenantStatus status = 6;
+  TenantPlan plan = 7;
+  TenantSettings settings = 8;
+  FeatureFlags features = 9;
+  repeated string organization_ids = 10;
+  apexos.common.v1.Timestamp created_at = 11;
+  apexos.common.v1.Timestamp updated_at = 12;
+  apexos.common.v1.Timestamp deleted_at = 13;
+}
+
+enum TenantStatus {
+  TENANT_STATUS_UNSPECIFIED = 0;
+  TENANT_STATUS_ACTIVE = 1;
+  TENANT_STATUS_SUSPENDED = 2;
+  TENANT_STATUS_PENDING = 3;
+  TENANT_STATUS_DELETED = 4;
+}
+
+enum TenantPlan {
+  TENANT_PLAN_UNSPECIFIED = 0;
+  TENANT_PLAN_FREE = 1;
+  TENANT_PLAN_STARTER = 2;
+  TENANT_PLAN_PROFESSIONAL = 3;
+  TENANT_PLAN_ENTERPRISE = 4;
+  TENANT_PLAN_CUSTOM = 5;
+}
+
+message TenantSettings {
+  apexos.common.v1.Locale default_locale = 1;
+  repeated apexos.common.v1.Locale supported_locales = 2;
+  string timezone = 3;
+  ThemeSettings theme = 4;
+  BrandingSettings branding = 5;
+  SecuritySettings security = 6;
+  IntegrationSettings integrations = 7;
+  TenantLimits limits = 8;
+}
+
+message ThemeSettings {
+  string primary_color = 1;
+  string secondary_color = 2;
+  string logo_url = 3;
+  string favicon_url = 4;
+  string custom_css = 5;
+}
+
+message BrandingSettings {
+  string name = 1;
+  string description = 2;
+  string support_email = 3;
+  string support_url = 4;
+  string terms_url = 5;
+  string privacy_url = 6;
+}
+
+message SecuritySettings {
+  bool mfa_required = 1;
+  PasswordPolicySettings password_policy = 2;
+  apexos.common.v1.Duration session_timeout = 3;
+  repeated string allowed_domains = 4;
+  repeated string ip_allowlist = 5;
+  repeated string ip_blocklist = 6;
+}
+
+message PasswordPolicySettings {
+  uint32 min_length = 1;
+  bool require_uppercase = 2;
+  bool require_lowercase = 3;
+  bool require_numbers = 4;
+  bool require_symbols = 5;
+  uint32 max_age_days = 6;
+  uint32 history_count = 7;
+}
+
+message IntegrationSettings {
+  bool lti_enabled = 1;
+  bool scorm_enabled = 2;
+  bool xapi_enabled = 3;
+  bool caliper_enabled = 4;
+  bool oneroster_enabled = 5;
+  repeated SsoProviderConfig sso_providers = 6;
+}
+
+message SsoProviderConfig {
+  string provider = 1;
+  bool enabled = 2;
+  map<string, string> config = 3;
+}
+
+message TenantLimits {
+  uint32 max_users = 1;
+  uint32 max_courses = 2;
+  uint32 max_storage_gb = 3;
+  uint32 max_bandwidth_gb = 4;
+  uint32 max_api_calls_per_hour = 5;
+  uint32 max_concurrent_sessions = 6;
+}
+
+message FeatureFlags {
+  map<string, bool> flags = 1;
+  map<string, RolloutConfig> rollout = 2;
+}
+
+message RolloutConfig {
+  uint32 percentage = 1;
+  repeated string groups = 2;
+  repeated string tenants = 3;
+  repeated string users = 4;
+}
+
+// Requests
+message CreateTenantRequest {
+  string name = 1;
+  string display_name = 2;
+  string domain = 3;
+  string subdomain = 4;
+  TenantPlan plan = 5;
+  TenantSettings settings = 6;
+  string owner_id = 7;
+}
+
+message GetTenantRequest {
+  string id = 1;
+}
+
+message UpdateTenantRequest {
+  string id = 1;
+  string display_name = 2;
+  string domain = 3;
+  string subdomain = 4;
+  TenantPlan plan = 5;
+  TenantStatus status = 6;
+  TenantSettings settings = 7;
+  FeatureFlags features = 8;
+}
+
+message DeleteTenantRequest {
+  string id = 1;
+}
+
+message ListTenantsRequest {
+  apexos.common.v1.PaginationRequest pagination = 1;
+  TenantStatus status = 2;
+  TenantPlan plan = 3;
+  string search = 4;
+}
+
+message ListTenantsResponse {
+  repeated Tenant tenants = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message SuspendTenantRequest {
+  string id = 1;
+}
+
+message ActivateTenantRequest {
+  string id = 1;
+}
+
+message ResolveTenantRequest {
+  string host = 1;
+}
+
+message ResolveTenantResponse {
+  string tenant_id = 1;
+  TenantContext context = 2;
+}
+
+message TenantContext {
+  string tenant_id = 1;
+  string name = 2;
+  string display_name = 3;
+  TenantStatus status = 4;
+  TenantPlan plan = 5;
+  TenantSettings settings = 6;
+  FeatureFlags features = 7;
+  repeated string organization_ids = 8;
+}
+
+message GetTenantByDomainRequest {
+  string domain = 1;
+}
+
+message GetTenantBySubdomainRequest {
+  string subdomain = 1;
+}
+
+message GetFeatureFlagsRequest {
+  string tenant_id = 1;
+}
+
+message GetFeatureFlagsResponse {
+  FeatureFlags flags = 1;
+}
+
+message SetFeatureFlagRequest {
+  string tenant_id = 1;
+  string flag = 2;
+  bool enabled = 3;
+  RolloutConfig rollout = 4;
+}
+
+message FeatureFlag {
+  string name = 1;
+  bool enabled = 2;
+  RolloutConfig rollout = 3;
+}
+
+message EvaluateFeatureFlagRequest {
+  string tenant_id = 1;
+  string flag = 2;
+  string user_id = 3;
+}
+
+message EvaluateFeatureFlagResponse {
+  bool enabled = 1;
+}
+
+message ListOrganizationsRequest {
+  string tenant_id = 1;
+  apexos.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message Organization {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  string display_name = 4;
+  string description = 5;
+  string logo_url = 6;
+  string domain = 7;
+  OrganizationSettings settings = 8;
+  uint64 member_count = 9;
+  uint64 course_count = 10;
+  apexos.common.v1.Timestamp created_at = 11;
+  apexos.common.v1.Timestamp updated_at = 12;
+  apexos.common.v1.Timestamp deleted_at = 13;
+}
+
+message OrganizationSettings {
+  string default_role = 1;
+  bool allow_self_enrollment = 2;
+  bool require_approval = 3;
+  OrganizationVisibility visibility = 4;
+  ThemeSettings branding = 5;
+  IntegrationSettings integrations = 6;
+}
+
+enum OrganizationVisibility {
+  ORGANIZATION_VISIBILITY_UNSPECIFIED = 0;
+  ORGANIZATION_VISIBILITY_PRIVATE = 1;
+  ORGANIZATION_VISIBILITY_MEMBERS = 2;
+  ORGANIZATION_VISIBILITY_TENANT = 3;
+  ORGANIZATION_VISIBILITY_PUBLIC = 4;
+}

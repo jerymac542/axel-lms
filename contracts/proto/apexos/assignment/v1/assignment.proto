@@ -1,0 +1,583 @@
+syntax = "proto3";
+
+package apexos.assignment.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/assignment/v1";
+option java_package = "io.apexos.axel.assignment.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Assignment.V1";
+
+import "apexos/common/v1/common.proto";
+import "apexos/course/v1/course.proto";
+
+// Assignment service
+
+service AssignmentService {
+  // Assignment CRUD
+  rpc CreateAssignment(CreateAssignmentRequest) returns (Assignment);
+  rpc GetAssignment(GetAssignmentRequest) returns (Assignment);
+  rpc UpdateAssignment(UpdateAssignmentRequest) returns (Assignment);
+  rpc DeleteAssignment(DeleteAssignmentRequest) returns (apexos.common.v1.Empty);
+  rpc ListAssignments(ListAssignmentsRequest) returns (ListAssignmentsResponse);
+  
+  // Assignment scheduling
+  rpc ScheduleAssignment(ScheduleAssignmentRequest) returns (Assignment);
+  rpc UnscheduleAssignment(UnscheduleAssignmentRequest) returns (Assignment);
+  
+  // Submissions
+  rpc CreateSubmission(CreateSubmissionRequest) returns (Submission);
+  rpc GetSubmission(GetSubmissionRequest) returns (Submission);
+  rpc UpdateSubmission(UpdateSubmissionRequest) returns (Submission);
+  rpc DeleteSubmission(DeleteSubmissionRequest) returns (apexos.common.v1.Empty);
+  rpc ListSubmissions(ListSubmissionsRequest) returns (ListSubmissionsResponse);
+  rpc SubmitSubmission(SubmitSubmissionRequest) returns (Submission);
+  rpc GradeSubmission(GradeSubmissionRequest) returns (Submission);
+  rpc BulkGradeSubmissions(BulkGradeSubmissionsRequest) returns (BulkGradeSubmissionsResponse);
+  
+  // Rubrics
+  rpc CreateRubric(CreateRubricRequest) returns (Rubric);
+  rpc GetRubric(GetRubricRequest) returns (Rubric);
+  rpc UpdateRubric(UpdateRubricRequest) returns (Rubric);
+  rpc DeleteRubric(DeleteRubricRequest) returns (apexos.common.v1.Empty);
+  rpc ListRubrics(ListRubricsRequest) returns (ListRubricsResponse);
+  
+  // Assignment groups
+  rpc CreateAssignmentGroup(CreateAssignmentGroupRequest) returns (AssignmentGroup);
+  rpc GetAssignmentGroup(GetAssignmentGroupRequest) returns (AssignmentGroup);
+  rpc UpdateAssignmentGroup(UpdateAssignmentGroupRequest) returns (AssignmentGroup);
+  rpc DeleteAssignmentGroup(DeleteAssignmentGroupRequest) returns (apexos.common.v1.Empty);
+  rpc ListAssignmentGroups(ListAssignmentGroupsRequest) returns (ListAssignmentGroupsResponse);
+  
+  // Peer review
+  rpc AssignPeerReview(AssignPeerReviewRequest) returns (PeerReviewAssignment);
+  rpc SubmitPeerReview(SubmitPeerReviewRequest) returns (PeerReview);
+  rpc GetPeerReview(GetPeerReviewRequest) returns (PeerReview);
+  
+  // Plagiarism
+  rpc CheckPlagiarism(CheckPlagiarismRequest) returns (CheckPlagiarismResponse);
+  rpc GetPlagiarismReport(GetPlagiarismReportRequest) returns (PlagiarismReport);
+}
+
+// Assignment
+message Assignment {
+  string id = 1;
+  string course_id = 2;
+  string group_id = 3;
+  string title = 4;
+  string description = 5;
+  AssignmentType type = 6;
+  AssignmentStatus status = 7;
+  AssignmentSettings settings = 8;
+  GradingSettings grading = 9;
+  repeated string attachment_ids = 10;
+  apexos.common.v1.Timestamp available_at = 11;
+  apexos.common.v1.Timestamp due_at = 12;
+  apexos.common.v1.Timestamp lock_at = 13;
+  apexos.common.v1.Timestamp created_at = 14;
+  apexos.common.v1.Timestamp updated_at = 15;
+  string created_by = 16;
+  string updated_by = 17;
+}
+
+enum AssignmentType {
+  ASSIGNMENT_TYPE_UNSPECIFIED = 0;
+  ASSIGNMENT_TYPE_HOMEWORK = 1;
+  ASSIGNMENT_TYPE_QUIZ = 2;
+  ASSIGNMENT_TYPE_EXAM = 3;
+  ASSIGNMENT_TYPE_ESSAY = 4;
+  ASSIGNMENT_TYPE_PROJECT = 5;
+  ASSIGNMENT_TYPE_DISCUSSION = 6;
+  ASSIGNMENT_TYPE_PEER_REVIEW = 7;
+  ASSIGNMENT_TYPE_EXTERNAL_TOOL = 8;
+  ASSIGNMENT_TYPE_SURVEY = 9;
+  ASSIGNMENT_TYPE_ATTENDANCE = 10;
+}
+
+enum AssignmentStatus {
+  ASSIGNMENT_STATUS_UNSPECIFIED = 0;
+  ASSIGNMENT_STATUS_DRAFT = 1;
+  ASSIGNMENT_STATUS_PUBLISHED = 2;
+  ASSIGNMENT_STATUS_CLOSED = 3;
+  ASSIGNMENT_STATUS_DELETED = 4;
+}
+
+message AssignmentSettings {
+  uint32 max_attempts = 1;
+  bool allow_late_submission = 2;
+  apexos.common.v1.Duration late_penalty = 3; // Percentage per period
+  bool require_lock = 4;
+  bool show_correct_answers = 5;
+  bool show_peer_reviews = 6;
+  bool anonymous_grading = 7;
+  bool group_submission = 8;
+  uint32 group_size = 9;
+  repeated string allowed_file_types = 10;
+  uint64 max_file_size = 11; // bytes
+  uint32 max_files = 12;
+  bool plagiarism_check = 13;
+  string plagiarism_tool = 14;
+  map<string, string> custom = 15;
+}
+
+message GradingSettings {
+  bool enabled = 1;
+  GradingType type = 2;
+  double points_possible = 3;
+  string rubric_id = 4;
+  bool auto_grade = 5;
+  AutoGradeSettings auto_grade_settings = 6;
+  bool curve_enabled = 7;
+  CurveSettings curve = 8;
+  bool extra_credit = 9;
+}
+
+enum GradingType {
+  GRADING_TYPE_UNSPECIFIED = 0;
+  GRADING_TYPE_POINTS = 1;
+  GRADING_TYPE_PERCENTAGE = 2;
+  GRADING_TYPE_COMPLETE_INCOMPLETE = 3;
+  GRADING_TYPE_GPA = 4;
+  GRADING_TYPE_LETTER = 5;
+  GRADING_TYPE_RUBRIC = 6;
+}
+
+message AutoGradeSettings {
+  bool enabled = 1;
+  string model_id = 2;
+  double threshold = 3; // Confidence threshold
+  bool require_manual_review = 4;
+  repeated string question_types = 5; // Types that can be auto-graded
+}
+
+message CurveSettings {
+  bool enabled = 1;
+  CurveMethod method = 2;
+  double target_mean = 3;
+  double target_stddev = 4;
+  double min_score = 5;
+  double max_score = 6;
+}
+
+enum CurveMethod {
+  CURVE_METHOD_UNSPECIFIED = 0;
+  CURVE_METHOD_LINEAR = 1;
+  CURVE_METHOD_NORMAL = 2;
+  CURVE_METHOD_SQUARE_ROOT = 3;
+  CURVE_METHOD_CUSTOM = 4;
+}
+
+// Requests
+message CreateAssignmentRequest {
+  string course_id = 1;
+  string group_id = 2;
+  string title = 3;
+  string description = 4;
+  AssignmentType type = 5;
+  AssignmentSettings settings = 6;
+  GradingSettings grading = 7;
+  apexos.common.v1.Timestamp available_at = 8;
+  apexos.common.v1.Timestamp due_at = 9;
+  apexos.common.v1.Timestamp lock_at = 10;
+}
+
+message GetAssignmentRequest {
+  string id = 1;
+  bool include_submissions = 2;
+  bool include_rubric = 3;
+}
+
+message UpdateAssignmentRequest {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  AssignmentType type = 4;
+  AssignmentStatus status = 5;
+  AssignmentSettings settings = 6;
+  GradingSettings grading = 7;
+  apexos.common.v1.Timestamp available_at = 8;
+  apexos.common.v1.Timestamp due_at = 9;
+  apexos.common.v1.Timestamp lock_at = 10;
+}
+
+message DeleteAssignmentRequest {
+  string id = 1;
+}
+
+message ListAssignmentsRequest {
+  string course_id = 1;
+  string group_id = 2;
+  AssignmentType type = 3;
+  AssignmentStatus status = 4;
+  apexos.common.v1.PaginationRequest pagination = 5;
+  apexos.common.v1.SortRequest sort = 6;
+}
+
+message ListAssignmentsResponse {
+  repeated Assignment assignments = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message ScheduleAssignmentRequest {
+  string id = 1;
+  apexos.common.v1.Timestamp available_at = 2;
+  apexos.common.v1.Timestamp due_at = 3;
+}
+
+message UnscheduleAssignmentRequest {
+  string id = 1;
+}
+
+// Submissions
+message Submission {
+  string id = 1;
+  string assignment_id = 2;
+  string user_id = 3; // or group_id for group submissions
+  string group_id = 4;
+  SubmissionStatus status = 5;
+  SubmissionContent content = 6;
+  repeated SubmissionAttachment attachments = 7;
+  GradingResult grading = 8;
+  uint32 attempt = 9;
+  apexos.common.v1.Timestamp submitted_at = 10;
+  apexos.common.v1.Timestamp graded_at = 11;
+  string graded_by = 12;
+  apexos.common.v1.Timestamp created_at = 13;
+  apexos.common.v1.Timestamp updated_at = 14;
+}
+
+enum SubmissionStatus {
+  SUBMISSION_STATUS_UNSPECIFIED = 0;
+  SUBMISSION_STATUS_DRAFT = 1;
+  SUBMISSION_STATUS_SUBMITTED = 2;
+  SUBMISSION_STATUS_LATE = 3;
+  SUBMISSION_STATUS_GRADED = 4;
+  SUBMISSION_STATUS_RETURNED = 5;
+  SUBMISSION_STATUS_EXCUSED = 6;
+  SUBMISSION_STATUS_MISSING = 7;
+}
+
+message SubmissionContent {
+  string text = 1;
+  string html = 2;
+  repeated string file_ids = 3;
+  map<string, string> data = 4; // For structured submissions (quiz answers, etc.)
+}
+
+message SubmissionAttachment {
+  string id = 1;
+  string filename = 2;
+  string mime_type = 3.
+  uint64 size = 4.
+  string url = 5.
+  string thumbnail_url = 6.
+}
+
+message GradingResult {
+  double score = 1.
+  string grade = 2.
+  string feedback = 3.
+  repeated CriterionScore criterion_scores = 4.
+  bool auto_graded = 5.
+  double auto_grade_confidence = 6.
+  map<string, string> details = 7.
+}
+
+message CriterionScore {
+  string criterion_id = 1.
+  string criterion_name = 2.
+  double score = 3.
+  double max_score = 4.
+  string feedback = 5.
+}
+
+message CreateSubmissionRequest {
+  string assignment_id = 1;
+  string user_id = 2; // Optional for group submissions
+  string group_id = 3;
+  SubmissionContent content = 4;
+  repeated SubmissionAttachment attachments = 5;
+}
+
+message GetSubmissionRequest {
+  string id = 1;
+  bool include_feedback = 2;
+}
+
+message UpdateSubmissionRequest {
+  string id = 1;
+  SubmissionContent content = 2;
+  repeated SubmissionAttachment attachments = 3;
+}
+
+message DeleteSubmissionRequest {
+  string id = 1;
+}
+
+message ListSubmissionsRequest {
+  string assignment_id = 1;
+  string user_id = 2;
+  string group_id = 3;
+  SubmissionStatus status = 4;
+  apexos.common.v1.PaginationRequest pagination = 5;
+  apexos.common.v1.SortRequest sort = 6;
+}
+
+message ListSubmissionsResponse {
+  repeated Submission submissions = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message SubmitSubmissionRequest {
+  string id = 1;
+}
+
+message GradeSubmissionRequest {
+  string submission_id = 1;
+  GradingResult grading = 2;
+  string graded_by = 3;
+  bool notify_student = 4;
+}
+
+message BulkGradeSubmissionsRequest {
+  string assignment_id = 1;
+  repeated BulkGradeItem grades = 2;
+  string graded_by = 3;
+  bool notify_students = 4;
+}
+
+message BulkGradeItem {
+  string submission_id = 1;
+  GradingResult grading = 2;
+}
+
+message BulkGradeSubmissionsResponse {
+  repeated Submission submissions = 1;
+  repeated BulkGradeError errors = 2;
+}
+
+message BulkGradeError {
+  string submission_id = 1;
+  string error = 2;
+}
+
+// Rubrics
+message Rubric {
+  string id = 1;
+  string course_id = 2;
+  string title = 3;
+  string description = 4;
+  RubricType type = 5;
+  repeated Criterion criteria = 6.
+  uint64 total_points = 7.
+  bool hide_scores = 8.
+  apexos.common.v1.Timestamp created_at = 9.
+  apexos.common.v1.Timestamp updated_at = 10.
+  string created_by = 11.
+}
+
+enum RubricType {
+  RUBRIC_TYPE_UNSPECIFIED = 0;
+  RUBRIC_TYPE_ANALYTIC = 1;
+  RUBRIC_TYPE_HOLISTIC = 2;
+  RUBRIC_TYPE_SINGLE_POINT = 3;
+}
+
+message Criterion {
+  string id = 1;
+  string name = 2.
+  string description = 3.
+  double points = 4.
+  int32 order = 5.
+  repeated Rating ratings = 6.
+}
+
+message Rating {
+  string id = 1.
+  string name = 2.
+  string description = 3.
+  double points = 4.
+}
+
+message CreateRubricRequest {
+  string course_id = 1.
+  string title = 2.
+  string description = 3.
+  RubricType type = 4.
+  repeated Criterion criteria = 5.
+  bool hide_scores = 6.
+}
+
+message GetRubricRequest {
+  string id = 1.
+}
+
+message UpdateRubricRequest {
+  string id = 1.
+  string title = 2.
+  string description = 3.
+  repeated Criterion criteria = 4.
+  bool hide_scores = 5.
+}
+
+message DeleteRubricRequest {
+  string id = 1.
+}
+
+message ListRubricsRequest {
+  string course_id = 1.
+  apexos.common.v1.PaginationRequest pagination = 2.
+}
+
+message ListRubricsResponse {
+  repeated Rubric rubrics = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+// Assignment Groups
+message AssignmentGroup {
+  string id = 1;
+  string course_id = 2;
+  string name = 3;
+  string description = 4;
+  double weight = 5; // Percentage of total grade
+  bool drop_lowest = 6;
+  uint32 drop_count = 7;
+  apexos.common.v1.Timestamp created_at = 8;
+  apexos.common.v1.Timestamp updated_at = 9;
+}
+
+message CreateAssignmentGroupRequest {
+  string course_id = 1;
+  string name = 2;
+  string description = 3;
+  double weight = 4;
+  bool drop_lowest = 5;
+  uint32 drop_count = 6;
+}
+
+message GetAssignmentGroupRequest {
+  string id = 1;
+}
+
+message UpdateAssignmentGroupRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  double weight = 4;
+  bool drop_lowest = 5;
+  uint32 drop_count = 6;
+}
+
+message DeleteAssignmentGroupRequest {
+  string id = 1;
+}
+
+message ListAssignmentGroupsRequest {
+  string course_id = 1;
+  apexos.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListAssignmentGroupsResponse {
+  repeated AssignmentGroup groups = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+// Peer Review
+message PeerReviewAssignment {
+  string id = 1;
+  string assignment_id = 2;
+  string reviewer_id = 3;
+  string reviewee_id = 4; // or group_id
+  string group_id = 5;
+  PeerReviewStatus status = 6;
+  apexos.common.v1.Timestamp assigned_at = 7;
+  apexos.common.v1.Timestamp due_at = 8;
+  apexos.common.v1.Timestamp completed_at = 9;
+}
+
+enum PeerReviewStatus {
+  PEER_REVIEW_STATUS_UNSPECIFIED = 0;
+  PEER_REVIEW_STATUS_PENDING = 1;
+  PEER_REVIEW_STATUS_IN_PROGRESS = 2;
+  PEER_REVIEW_STATUS_COMPLETED = 3;
+  PEER_REVIEW_STATUS_OVERDUE = 4;
+}
+
+message PeerReview {
+  string id = 1;
+  string assignment_id = 2.
+  string reviewer_id = 3.
+  string reviewee_id = 4. // or group_id
+  string group_id = 5.
+  PeerReviewContent content = 6.
+  apexos.common.v1.Timestamp submitted_at = 7.
+  apexos.common.v1.Timestamp created_at = 8.
+}
+
+message PeerReviewContent {
+  double score = 1.
+  string feedback = 2.
+  repeated CriterionFeedback criterion_feedback = 3.
+}
+
+message CriterionFeedback {
+  string criterion_id = 1.
+  double score = 2.
+  string feedback = 3.
+}
+
+message AssignPeerReviewRequest {
+  string assignment_id = 1.
+  string reviewer_id = 2.
+  string reviewee_id = 3.
+  string group_id = 4.
+  apexos.common.v1.Timestamp due_at = 5.
+}
+
+message SubmitPeerReviewRequest {
+  string assignment_id = 1.
+  string reviewer_id = 2.
+  string reviewee_id = 3.
+  string group_id = 4.
+  PeerReviewContent content = 5.
+}
+
+message GetPeerReviewRequest {
+  string id = 1.
+}
+
+// Plagiarism
+message CheckPlagiarismRequest {
+  string submission_id = 1.
+  string tool = 2. // turnitin, copyleaks, internal, etc.
+}
+
+message CheckPlagiarismResponse {
+  string report_id = 1.
+  double similarity_score = 2.
+  string status = 3. // pending, completed, failed
+}
+
+message GetPlagiarismReportRequest {
+  string report_id = 1.
+}
+
+message PlagiarismReport {
+  string id = 1.
+  string submission_id = 2.
+  string tool = 3.
+  double similarity_score = 4.
+  repeated PlagiarismMatch matches = 5.
+  apexos.common.v1.Timestamp created_at = 6.
+  string status = 7.
+}
+
+message PlagiarismMatch {
+  string source_type = 1. // internet, database, student_paper
+  string source_url = 2.
+  string source_title = 3.
+  double similarity = 4.
+  string matched_text = 5.
+  uint32 start_offset = 6.
+  uint32 end_offset = 7.
+}

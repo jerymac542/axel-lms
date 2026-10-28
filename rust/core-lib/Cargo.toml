@@ -1,0 +1,102 @@
+[package]
+name = "apexos-core"
+version = { workspace = true }
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/apexos/axel-lms"
+description = "Apexos Core Library - Shared types, events, validation, crypto for Axel LMS"
+authors = ["Apexos Team <team@apexos.io>"]
+categories = ["web-programming", "asynchronous", "network-programming"]
+keywords = ["lms", "education", "apexos", "axel", "core"]
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+eyre = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+config = { workspace = true, features = ["serde"] }
+figment = { workspace = true, features = ["serde", "toml"] }
+secrecy = { workspace = true }
+zeroize = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v7", "serde", "fast-rng"] }
+ulid = { workspace = true }
+chrono = { workspace = true, features = ["serde", "tz"] }
+time = { workspace = true, features = ["serde", "formatting", "parsing", "local-offset"] }
+url = { workspace = true }
+percent-encoding = { workspace = true }
+base64 = { workspace = true, features = ["serde"] }
+mime = { workspace = true }
+mime_guess = { workspace = true }
+bytes = { workspace = true }
+bitflags = { workspace = true }
+smallvec = { workspace = true }
+indexmap = { workspace = true, features = ["serde-1"] }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam = { workspace = true }
+futures = { workspace = true }
+pin-project = { workspace = true }
+
+# Validation
+validator = { version = "0.17", features = ["derive", "regex"] }
+garde = { version = "0.6", features = ["derive", "regex", "chrono", "uuid", "email", "url", "ip", "cidr", "phone", "credit_card", "ascii", "unicode"] }
+
+# Crypto
+argon2 = { workspace = true, features = ["simd"] }
+ring = { workspace = true }
+aes-gcm = { workspace = true }
+chacha20poly1305 = { workspace = true }
+x25519-dalek = { workspace = true }
+ed25519-dalek = { workspace = true }
+p256 = { workspace = true }
+spki = { workspace = true }
+pkcs8 = { workspace = true }
+x509-cert = { workspace = true }
+x509-parser = { workspace = true }
+rcgen = { workspace = true, features = ["pem"] }
+rustls = { workspace = true, features = ["std", "logging", "aws-lc-rs"] }
+tokio-rustls = { workspace = true, features = ["rustls-0.23", "webpki-roots"] }
+jsonwebtoken = { workspace = true, features = ["chrono"] }
+oauth2 = { workspace = true, features = ["pkce", "async-http-client-reqwest"] }
+totp = { workspace = true }
+
+# Serialization
+serde_bytes = "0.11"
+serde_with = { version = "3.4", features = ["chrono", "uuid", "rustc_serialize", "hex", "base64", "json", "toml", "yaml"] }
+simd-json = "0.13"
+
+# Observability
+opentelemetry = { workspace = true, features = ["trace", "metrics", "logs"] }
+opentelemetry-sdk = { workspace = true, features = ["trace", "metrics", "logs", "rt-tokio", "resource"] }
+opentelemetry-semantic-conventions = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+
+# Messaging
+async-nats = { workspace = true, features = ["jetstream", "kv", "objstore", "tokio", "tls", "serde_json"] }
+rdkafka = { workspace = true, features = ["ssl", "sasl", "tokio", "serde"] }
+
+# Utils
+tempfile = { workspace = true }
+walkdir = { workspace = true }
+ignore = { workspace = true }
+glob = { workspace = true }
+
+[dev-dependencies]
+testcontainers = { workspace = true, features = ["tokio", "postgres", "redis", "minio"] }
+mockall = { workspace = true }
+wiremock = { workspace = true, features = ["tokio", "match", "json", "tempfile"] }
+proptest = { workspace = true }
+pretty_assertions = "1.4"
+serial_test = "3.0"
+
+[features]
+default = []
+full = []
+tracing = []
+metrics = []

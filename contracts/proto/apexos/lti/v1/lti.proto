@@ -1,0 +1,685 @@
+syntax = "proto3";
+
+package apexos.lti.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/lti/v1";
+option java_package = "io.apexos.axel.lti.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Lti.V1";
+
+import "apexos/common/v1/common.proto";
+
+// LTI 1.3 Advantage service
+
+service LtiService {
+  // Platform (Tool Consumer) operations
+  rpc RegisterPlatform(RegisterPlatformRequest) returns (Platform);
+  rpc GetPlatform(GetPlatformRequest) returns (Platform);
+  rpc UpdatePlatform(UpdatePlatformRequest) returns (Platform);
+  rpc DeletePlatform(DeletePlatformRequest) returns (apexos.common.v1.Empty);
+  rpc ListPlatforms(ListPlatformsRequest) returns (ListPlatformsResponse);
+  rpc GetPlatformJwks(GetPlatformJwksRequest) returns (JwksResponse);
+  
+  // Tool registration
+  rpc RegisterTool(RegisterToolRequest) returns (Tool);
+  rpc GetTool(GetToolRequest) returns (Tool);
+  rpc UpdateTool(UpdateToolRequest) returns (Tool);
+  rpc DeleteTool(DeleteToolRequest) returns (apexos.common.v1.Empty);
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+  rpc GetToolJwks(GetToolJwksRequest) returns (JwksResponse);
+  
+  // Deployment
+  rpc CreateDeployment(CreateDeploymentRequest) returns (Deployment);
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc UpdateDeployment(UpdateDeploymentRequest) returns (Deployment);
+  rpc DeleteDeployment(DeleteDeploymentRequest) returns (apexos.common.v1.Empty);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  
+  // Launch
+  rpc InitiateLogin(InitiateLoginRequest) returns (InitiateLoginResponse);
+  rpc HandleLaunch(HandleLaunchRequest) returns (HandleLaunchResponse);
+  rpc ValidateLaunch(ValidateLaunchRequest) returns (ValidateLaunchResponse);
+  
+  // Deep Linking
+  rpc GetDeepLinkingContent(GetDeepLinkingContentRequest) returns (DeepLinkingContentResponse);
+  rpc CreateDeepLinkingContent(CreateDeepLinkingContentRequest) returns (DeepLinkingContentResponse);
+  
+  // Names and Role Provisioning (NRPS)
+  rpc GetContextMemberships(GetContextMembershipsRequest) returns (ContextMembershipsResponse);
+  rpc GetMembership(GetMembershipRequest) returns (Membership);
+  
+  // Assignment and Grade Services (AGS)
+  rpc CreateLineItem(CreateLineItemRequest) returns (LineItem);
+  rpc GetLineItem(GetLineItemRequest) returns (LineItem);
+  rpc UpdateLineItem(UpdateLineItemRequest) returns (LineItem);
+  rpc DeleteLineItem(DeleteLineItemRequest) returns (apexos.common.v1.Empty);
+  rpc ListLineItems(ListLineItemsRequest) returns (ListLineItemsResponse);
+  rpc SubmitScore(SubmitScoreRequest) returns (Score);
+  rpc GetScore(GetScoreRequest) returns (Score);
+  rpc GetScores(GetScoresRequest) returns (GetScoresResponse);
+  rpc DeleteScore(DeleteScoreRequest) returns (apexos.common.v1.Empty);
+  
+  // Proctoring
+  rpc CreateProctoringSession(CreateProctoringSessionRequest) returns (ProctoringSession);
+  rpc GetProctoringSession(GetProctoringSessionRequest) returns (ProctoringSession);
+  rpc EndProctoringSession(EndProctoringSessionRequest) returns (apexos.common.v1.Empty);
+  
+  // Certificates
+  rpc IssueCertificate(IssueCertificateRequest) returns (Certificate);
+  rpc GetCertificate(GetCertificateRequest) returns (Certificate);
+  rpc RevokeCertificate(RevokeCertificateRequest) returns (apexos.common.v1.Empty);
+}
+
+// Platform (Tool Consumer)
+message Platform {
+  string id = 1;
+  string name = 2;
+  string client_id = 3;
+  string issuer = 4;
+  string auth_endpoint = 5;
+  string token_endpoint = 6;
+  string jwks_url = 7;
+  string private_key = 8; // Encrypted
+  string key_id = 9;
+  string deployment_id = 10.
+  repeated string supported_versions = 11.
+  repeated string supported_extensions = 12.
+  PlatformSettings settings = 13.
+  apexos.common.v1.Timestamp created_at = 14.
+  apexos.common.v1.Timestamp updated_at = 15.
+}
+
+message PlatformSettings {
+  bool allow_any_tool = 1.
+  repeated string allowed_tool_domains = 2.
+  bool require_privacy_acceptance = 3.
+  bool auto_provision_users = 4.
+  string default_user_role = 5.
+  map<string, string> attribute_mapping = 6.
+}
+
+message RegisterPlatformRequest {
+  string name = 1.
+  string client_id = 2.
+  string issuer = 3.
+  string auth_endpoint = 4.
+  string token_endpoint = 5.
+  string jwks_url = 6.
+  string private_key = 7.
+  string key_id = 8.
+  string deployment_id = 9.
+  repeated string supported_versions = 10.
+  repeated string supported_extensions = 11.
+  PlatformSettings settings = 12.
+}
+
+message GetPlatformRequest {
+  string id = 1.
+}
+
+message UpdatePlatformRequest {
+  string id = 1.
+  string name = 2.
+  string auth_endpoint = 3.
+  string token_endpoint = 4.
+  string jwks_url = 5.
+  string private_key = 6.
+  string key_id = 7.
+  string deployment_id = 8.
+  repeated string supported_versions = 9.
+  repeated string supported_extensions = 10.
+  PlatformSettings settings = 11.
+}
+
+message DeletePlatformRequest {
+  string id = 1.
+}
+
+message ListPlatformsRequest {
+  apexos.common.v1.PaginationRequest pagination = 1.
+}
+
+message ListPlatformsResponse {
+  repeated Platform platforms = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message GetPlatformJwksRequest {
+  string platform_id = 1.
+}
+
+// Tool
+message Tool {
+  string id = 1;
+  string platform_id = 2;
+  string title = 3;
+  string description = 4;
+  string target_link_uri = 5;
+  string icon_url = 6;
+  map<string, string> custom_parameters = 7;
+  PrivacyLevel privacy_level = 8;
+  map<string, google.protobuf.Value> extensions = 9;
+  ToolSettings settings = 10;
+  apexos.common.v1.Timestamp created_at = 11;
+  apexos.common.v1.Timestamp updated_at = 12;
+}
+
+enum PrivacyLevel {
+  PRIVACY_LEVEL_UNSPECIFIED = 0;
+  PRIVACY_LEVEL_ANONYMOUS = 1;
+  PRIVACY_LEVEL_NAME_ONLY = 2;
+  PRIVACY_LEVEL_EMAIL_ONLY = 3;
+  PRIVACY_LEVEL_FULL = 4;
+}
+
+message ToolSettings {
+  bool enabled = 1;
+  bool require_launch_presentation = 2;
+  bool allow_grade_sync = 3;
+  bool allow_nrps = 4;
+  bool allow_deep_linking = 5;
+  map<string, string> placement_config = 6;
+}
+
+message RegisterToolRequest {
+  string platform_id = 1;
+  string title = 2;
+  string description = 3;
+  string target_link_uri = 4;
+  string icon_url = 5;
+  map<string, string> custom_parameters = 6;
+  PrivacyLevel privacy_level = 7;
+  map<string, google.protobuf.Value> extensions = 8;
+  ToolSettings settings = 9;
+}
+
+message GetToolRequest {
+  string id = 1;
+}
+
+message UpdateToolRequest {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string target_link_uri = 4;
+  string icon_url = 5;
+  map<string, string> custom_parameters = 6;
+  PrivacyLevel privacy_level = 7;
+  map<string, google.protobuf.Value> extensions = 8;
+  ToolSettings settings = 9;
+}
+
+message DeleteToolRequest {
+  string id = 1;
+}
+
+message ListToolsRequest {
+  string platform_id = 1;
+  apexos.common.v1.PaginationRequest pagination = 2;
+}
+
+message ListToolsResponse {
+  repeated Tool tools = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message GetToolJwksRequest {
+  string tool_id = 1;
+}
+
+// Deployment
+message Deployment {
+  string id = 1;
+  string platform_id = 2;
+  string tool_id = 3;
+  string deployment_id = 4; // LTI deployment_id
+  string context_id = 5;
+  string context_type = 6; // CourseSection, CourseTemplate, Group, etc.
+  string context_title = 7;
+  string context_label = 8;
+  DeploymentSettings settings = 9;
+  apexos.common.v1.Timestamp created_at = 10;
+  apexos.common.v1.Timestamp updated_at = 11;
+}
+
+message DeploymentSettings {
+  map<string, string> custom_parameters = 1;
+  bool allow_grade_sync = 2;
+  bool allow_nrps = 3;
+  bool allow_deep_linking = 4;
+  string resource_link_id = 5;
+}
+
+message CreateDeploymentRequest {
+  string platform_id = 1;
+  string tool_id = 2;
+  string deployment_id = 3;
+  string context_id = 4;
+  string context_type = 5;
+  string context_title = 6;
+  string context_label = 7;
+  DeploymentSettings settings = 8;
+}
+
+message GetDeploymentRequest {
+  string id = 1;
+}
+
+message UpdateDeploymentRequest {
+  string id = 1;
+  DeploymentSettings settings = 2;
+}
+
+message DeleteDeploymentRequest {
+  string id = 1;
+}
+
+message ListDeploymentsRequest {
+  string platform_id = 1;
+  string tool_id = 2;
+  string context_id = 3;
+  apexos.common.v1.PaginationRequest pagination = 4;
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+// Launch
+message InitiateLoginRequest {
+  string platform_id = 1;
+  string tool_id = 2;
+  string deployment_id = 3;
+  string login_hint = 4;
+  string lti_message_hint = 5;
+  string target_link_uri = 6;
+  map<string, string> custom_parameters = 7;
+}
+
+message InitiateLoginResponse {
+  string oidc_login_url = 1;
+  string state = 2;
+  string nonce = 3;
+}
+
+message HandleLaunchRequest {
+  string id_token = 1;
+  map<string, string> form_data = 2;
+}
+
+message HandleLaunchResponse {
+  bool valid = 1;
+  LaunchClaims claims = 2;
+  string redirect_url = 3;
+  string error = 4;
+}
+
+message LaunchClaims {
+  string iss = 1;
+  string sub = 2.
+  string aud = 3.
+  int64 exp = 4.
+  int64 iat = 5.
+  int64 nonce = 6.
+  string azp = 7.
+  string deployment_id = 8.
+  ContextClaim context = 9.
+  UserClaim user = 10.
+  RolesClaim roles = 11.
+  LisClaim lis = 12.
+  AgsClaim ags = 13.
+  NrpsClaim nrps = 14.
+  DeepLinkingClaim deep_linking = 15.
+  ProctoringClaim proctoring = 16.
+  map<string, google.protobuf.Value> custom = 17.
+}
+
+message ContextClaim {
+  string id = 1.
+  string type = 2.
+  string title = 3.
+  string label = 4.
+}
+
+message UserClaim {
+  string id = 1.
+  string name = 2.
+  string given_name = 3.
+  string family_name = 4.
+  string email = 5.
+  string picture = 6.
+  string locale = 7.
+}
+
+message RolesClaim {
+  repeated string roles = 1.
+}
+
+message LisClaim {
+  string person_sourced_id = 1.
+  string course_section_sourced_id = 2.
+  string course_sourced_id = 3.
+}
+
+message AgsClaim {
+  string scope = 1.
+  string lineitem_url = 2.
+  string lineitems_url = 3.
+}
+
+message NrpsClaim {
+  string context_memberships_url = 1.
+  string service_versions = 2.
+}
+
+message DeepLinkingClaim {
+  string deep_link_return_url = 1.
+  string accept_types = 2.
+  bool accept_multiple = 3.
+  bool accept_unsigned = 4.
+  string data = 5.
+}
+
+message ProctoringClaim {
+  string settings_url = 1.
+  string exam_id = 2.
+}
+
+message ValidateLaunchRequest {
+  string id_token = 1.
+}
+
+message ValidateLaunchResponse {
+  bool valid = 1.
+  LaunchClaims claims = 2.
+  string error = 3.
+}
+
+// Deep Linking
+message GetDeepLinkingContentRequest {
+  string deployment_id = 1.
+  string deep_link_return_url = 2.
+  string accept_types = 3.
+  bool accept_multiple = 4.
+  string data = 5.
+}
+
+message DeepLinkingContentResponse {
+  repeated ContentItem items = 1.
+  string error = 2.
+}
+
+message ContentItem {
+  string type = 1. // link, ltiResourceLink, file, html, etc.
+  string title = 2.
+  string text = 3.
+  string url = 4.
+  string icon_url = 5.
+  string thumbnail_url = 6.
+  map<string, string> custom = 7.
+  string window_target = 8. // _blank, _self, iframe
+  int32 width = 9.
+  int32 height = 10.
+  bool secure = 11.
+}
+
+message CreateDeepLinkingContentRequest {
+  string deployment_id = 1.
+  repeated ContentItem items = 2.
+  string deep_link_return_url = 3.
+}
+
+// NRPS
+message GetContextMembershipsRequest {
+  string deployment_id = 1.
+  string role = 2.
+  apexos.common.v1.PaginationRequest pagination = 3.
+}
+
+message ContextMembershipsResponse {
+  repeated Membership members = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message Membership {
+  string user_id = 1.
+  string lis_person_sourced_id = 2.
+  string name = 3.
+  string given_name = 4.
+  string family_name = 5.
+  string email = 6.
+  repeated string roles = 7.
+  string status = 8. // Active, Inactive
+  map<string, string> custom = 9.
+}
+
+message GetMembershipRequest {
+  string deployment_id = 1.
+  string user_id = 2.
+}
+
+// AGS
+message LineItem {
+  string id = 1.
+  string deployment_id = 2.
+  string label = 3.
+  string resource_id = 4.
+  string tag = 5.
+  double score_maximum = 6.
+  double score_minimum = 7.
+  string resource_link_id = 8.
+  string start_date_time = 9.
+  string end_date_time = 10.
+  GradingProgress grading_progress = 11.
+  GradingType grading_type = 12.
+  apexos.common.v1.Timestamp created_at = 13.
+  apexos.common.v1.Timestamp updated_at = 14.
+}
+
+enum GradingProgress {
+  GRADING_PROGRESS_UNSPECIFIED = 0;
+  GRADING_PROGRESS_NOT_STARTED = 1;
+  GRADING_PROGRESS_IN_PROGRESS = 2;
+  GRADING_PROGRESS_COMPLETED = 3;
+  GRADING_PROGRESS_FULLY_GRADED = 4;
+}
+
+enum GradingType {
+  GRADING_TYPE_UNSPECIFIED = 0;
+  GRADING_TYPE_POINTS = 1;
+  GRADING_TYPE_PERCENTAGE = 2;
+  GRADING_TYPE_LETTER = 3;
+  GRADING_TYPE_PASS_FAIL = 4;
+}
+
+message CreateLineItemRequest {
+  string deployment_id = 1.
+  string label = 2.
+  string resource_id = 3.
+  string tag = 4.
+  double score_maximum = 4.
+  double score_minimum = 5.
+  string resource_link_id = 6.
+  string start_date_time = 7.
+  string end_date_time = 8.
+  GradingProgress grading_progress = 9.
+  GradingType grading_type = 10.
+}
+
+message GetLineItemRequest {
+  string id = 1.
+}
+
+message UpdateLineItemRequest {
+  string id = 1.
+  string label = 2.
+  double score_maximum = 3.
+  double score_minimum = 4.
+  GradingProgress grading_progress = 5.
+}
+
+message DeleteLineItemRequest {
+  string id = 1.
+}
+
+message ListLineItemsRequest {
+  string deployment_id = 1.
+  string resource_link_id = 2.
+  string tag = 3.
+  apexos.common.v1.PaginationRequest pagination = 4.
+}
+
+message ListLineItemsResponse {
+  repeated LineItem line_items = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message Score {
+  string id = 1.
+  string line_item_id = 2.
+  string user_id = 3.
+  double score = 4.
+  string comment = 5.
+  string activity_progress = 6. // Started, Completed
+  string grading_progress = 7. // NotStarted, FullyGraded
+  apexos.common.v1.Timestamp timestamp = 8.
+  string score_given_by = 9.
+}
+
+message SubmitScoreRequest {
+  string line_item_id = 1.
+  string user_id = 2.
+  double score = 3.
+  string comment = 4.
+  string activity_progress = 5.
+  string grading_progress = 6.
+}
+
+message GetScoreRequest {
+  string line_item_id = 1.
+  string user_id = 2.
+}
+
+message GetScoresRequest {
+  string line_item_id = 1.
+  apexos.common.v1.PaginationRequest pagination = 2.
+}
+
+message GetScoresResponse {
+  repeated Score scores = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message DeleteScoreRequest {
+  string line_item_id = 1.
+  string user_id = 2.
+}
+
+// Proctoring
+message ProctoringSession {
+  string id = 1.
+  string deployment_id = 2.
+  string user_id = 3.
+  string exam_id = 4.
+  ProctoringStatus status = 5.
+  ProctoringSettings settings = 6.
+  ProctoringResult result = 7.
+  apexos.common.v1.Timestamp created_at = 8.
+  apexos.common.v1.Timestamp started_at = 9.
+  apexos.common.v1.Timestamp ended_at = 10.
+}
+
+enum ProctoringStatus {
+  PROCTORING_STATUS_UNSPECIFIED = 0;
+  PROCTORING_STATUS_PENDING = 1;
+  PROCTORING_STATUS_ACTIVE = 2;
+  PROCTORING_STATUS_COMPLETED = 3;
+  PROCTORING_STATUS_FLAGGED = 4;
+  PROCTORING_STATUS_ENDED = 5;
+}
+
+message ProctoringSettings {
+  bool require_video = 1.
+  bool require_audio = 2.
+  bool require_screen = 3.
+  bool lockdown_browser = 4.
+  repeated string allowed_applications = 5.
+  repeated string blocked_applications = 6.
+  map<string, string> custom = 7.
+}
+
+message ProctoringResult {
+  bool passed = 1.
+  repeated ProctoringEvent events = 2.
+  string report_url = 3.
+}
+
+message ProctoringEvent {
+  string type = 1. // face_not_detected, multiple_faces, looking_away, etc.
+  apexos.common.v1.Timestamp timestamp = 2.
+  string details = 3.
+  double severity = 4. // 0-1
+}
+
+message CreateProctoringSessionRequest {
+  string deployment_id = 1.
+  string user_id = 2.
+  string exam_id = 3.
+  ProctoringSettings settings = 4.
+}
+
+message GetProctoringSessionRequest {
+  string id = 1.
+}
+
+message EndProctoringSessionRequest {
+  string id = 1.
+  ProctoringResult result = 2.
+}
+
+// Certificates
+message Certificate {
+  string id = 1.
+  string platform_id = 2.
+  string tool_id = 3.
+  string user_id = 4.
+  string course_id = 5.
+  string title = 6.
+  string description = 7.
+  string credential_id = 8.
+  string credential_url = 9.
+  string image_url = 10.
+  map<string, string> custom = 11.
+  apexos.common.v1.Timestamp issued_at = 12.
+  apexos.common.v1.Timestamp expires_at = 13.
+  CertificateStatus status = 14.
+}
+
+enum CertificateStatus {
+  CERTIFICATE_STATUS_UNSPECIFIED = 0;
+  CERTIFICATE_STATUS_ISSUED = 1;
+  CERTIFICATE_STATUS_REVOKED = 2;
+  CERTIFICATE_STATUS_EXPIRED = 3;
+}
+
+message IssueCertificateRequest {
+  string platform_id = 1.
+  string tool_id = 2.
+  string user_id = 3.
+  string course_id = 4.
+  string title = 5.
+  string description = 6.
+  string image_url = 7.
+  map<string, string> custom = 8.
+  apexos.common.v1.Timestamp expires_at = 9.
+}
+
+message GetCertificateRequest {
+  string id = 1.
+}
+
+message RevokeCertificateRequest {
+  string id = 1.
+  string reason = 2.
+}

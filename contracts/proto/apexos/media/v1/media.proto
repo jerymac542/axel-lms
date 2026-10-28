@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package apexos.media.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/media/v1";
+option java_package = "io.apexos.axel.media.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Media.V1";
+
+import "apexos/common/v1/common.proto";
+
+// Media service
+
+service MediaService {
+  // Media upload/management
+  rpc UploadMedia(UploadMediaRequest) returns (UploadMediaResponse);
+  rpc GetMedia(GetMediaRequest) returns (Media);
+  rpc UpdateMedia(UpdateMediaRequest) returns (Media);
+  rpc DeleteMedia(DeleteMediaRequest) returns (apexos.common.v1.Empty);
+  rpc ListMedia(ListMediaRequest) returns (ListMediaResponse);
+  
+  // Media processing
+  rpc ProcessMedia(ProcessMediaRequest) returns (ProcessMediaResponse);
+  rpc GetProcessingStatus(GetProcessingStatusRequest) returns (ProcessingStatus);
+  
+  // Media variants
+  rpc CreateVariant(CreateVariantRequest) returns (MediaVariant);
+  rpc GetVariant(GetVariantRequest) returns (MediaVariant);
+  rpc ListVariants(ListVariantsRequest) returns (ListVariantsResponse);
+  rpc DeleteVariant(DeleteVariantRequest) returns (apexos.common.v1.Empty);
+  
+  // Streaming
+  rpc GetStreamUrl(GetStreamUrlRequest) returns (GetStreamUrlResponse);
+  rpc GetSignedUrl(GetSignedUrlRequest) returns (GetSignedUrlResponse);
+  
+  // Bulk operations
+  rpc BulkDeleteMedia(BulkDeleteMediaRequest) returns (BulkDeleteMediaResponse);
+}
+
+// Media
+message Media {
+  string id = 1;
+  string tenant_id = 2;
+  string organization_id = 3;
+  string uploaded_by = 4;
+  string filename = 5;
+  string original_filename = 6;
+  apexos.common.v1.MimeType mime_type = 7;
+  uint64 size = 8;
+  string checksum = 9; // SHA256
+  MediaStatus status = 10;
+  MediaMetadata metadata = 11;
+  repeated MediaVariant variants = 12;
+  string storage_key = 13;
+  string storage_bucket = 14;
+  apexos.common.v1.Timestamp created_at = 15;
+  apexos.common.v1.Timestamp updated_at = 16;
+  apexos.common.v1.Timestamp processed_at = 17;
+  map<string, string> tags = 18;
+}
+
+enum MediaStatus {
+  MEDIA_STATUS_UNSPECIFIED = 0;
+  MEDIA_STATUS_UPLOADING = 1;
+  MEDIA_STATUS_UPLOADED = 2;
+  MEDIA_STATUS_PROCESSING = 3;
+  MEDIA_STATUS_PROCESSED = 4;
+  MEDIA_STATUS_FAILED = 5;
+  MEDIA_STATUS_DELETED = 6;
+}
+
+message MediaMetadata {
+  // Image
+  uint32 width = 1;
+  uint32 height = 2;
+  string color_space = 3;
+  bool has_alpha = 4;
+  uint32 frames = 5;
+  
+  // Video/Audio
+  double duration = 6; // seconds
+  string video_codec = 7;
+  string audio_codec = 8;
+  uint32 video_bitrate = 9; // kbps
+  uint32 audio_bitrate = 10; // kbps
+  uint32 frame_rate = 11;
+  string aspect_ratio = 12;
+  
+  // Document
+  uint32 page_count = 13;
+  string author = 14;
+  string creator = 15;
+  string producer = 16;
+  apexos.common.v1.Timestamp creation_date = 17;
+  apexos.common.v1.Timestamp modification_date = 18;
+  
+  // Custom
+  map<string, string> custom = 19;
+}
+
+message MediaVariant {
+  string id = 1;
+  string media_id = 2;
+  string name = 3; // thumbnail, preview, hd, 4k, audio_only, etc.
+  apexos.common.v1.MimeType mime_type = 4;
+  uint64 size = 5;
+  string storage_key = 6;
+  string url = 7;
+  MediaMetadata metadata = 8;
+  apexos.common.v1.Timestamp created_at = 9;
+}
+
+// Requests
+message UploadMediaRequest {
+  string tenant_id = 1;
+  string organization_id = 2;
+  string uploaded_by = 3;
+  string filename = 4;
+  apexos.common.v1.MimeType mime_type = 5;
+  uint64 size = 6;
+  string checksum = 7;
+  bytes data = 8;
+  map<string, string> tags = 9;
+  ProcessingOptions processing = 10;
+}
+
+message ProcessingOptions {
+  bool auto_process = 1;
+  repeated string variants = 2; // Variant names to generate
+  bool extract_metadata = 3;
+  bool generate_thumbnails = 4;
+  int32 thumbnail_count = 5;
+  bool generate_preview = 6;
+  int32 preview_duration = 7; // seconds
+  bool watermark = 8;
+  string watermark_text = 9;
+}
+
+message UploadMediaResponse {
+  string media_id = 1;
+  string upload_url = 2; // For multipart upload
+  string upload_id = 3;
+  repeated string part_urls = 4;
+}
+
+message GetMediaRequest {
+  string id = 1;
+  bool include_variants = 2;
+}
+
+message UpdateMediaRequest {
+  string id = 1;
+  string filename = 2;
+  map<string, string> tags = 3;
+}
+
+message DeleteMediaRequest {
+  string id = 1;
+  bool force = 2; // Skip trash
+}
+
+message ListMediaRequest {
+  string tenant_id = 1;
+  string organization_id = 2;
+  string uploaded_by = 3;
+  apexos.common.v1.MimeType mime_type = 4;
+  MediaStatus status = 5;
+  string search = 6;
+  repeated string tags = 7;
+  apexos.common.v1.PaginationRequest pagination = 8;
+  apexos.common.v1.SortRequest sort = 9;
+}
+
+message ListMediaResponse {
+  repeated Media media = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+// Processing
+message ProcessMediaRequest {
+  string media_id = 1;
+  ProcessingOptions options = 2;
+}
+
+message ProcessMediaResponse {
+  string job_id = 1;
+  ProcessingStatus status = 2;
+}
+
+message GetProcessingStatusRequest {
+  string job_id = 1;
+}
+
+message ProcessingStatus {
+  string job_id = 1;
+  string media_id = 2;
+  ProcessingState state = 3;
+  double progress = 4; // 0-100
+  string current_step = 5;
+  repeated MediaVariant completed_variants = 6;
+  string error = 7;
+  apexos.common.v1.Timestamp started_at = 8;
+  apexos.common.v1.Timestamp completed_at = 9;
+}
+
+enum ProcessingState {
+  PROCESSING_STATE_UNSPECIFIED = 0;
+  PROCESSING_STATE_QUEUED = 1;
+  PROCESSING_STATE_RUNNING = 2;
+  PROCESSING_STATE_COMPLETED = 3;
+  PROCESSING_STATE_FAILED = 4;
+}
+
+// Variants
+message CreateVariantRequest {
+  string media_id = 1;
+  string name = 2;
+  apexos.common.v1.MimeType mime_type = 3;
+  MediaMetadata metadata = 4;
+  bytes data = 5;
+}
+
+message GetVariantRequest {
+  string media_id = 1;
+  string variant_id = 2;
+}
+
+message ListVariantsRequest {
+  string media_id = 1;
+}
+
+message ListVariantsResponse {
+  repeated MediaVariant variants = 1;
+}
+
+message DeleteVariantRequest {
+  string media_id = 1;
+  string variant_id = 2;
+}
+
+// Streaming
+message GetStreamUrlRequest {
+  string media_id = 1;
+  string variant_name = 2; // If not specified, use best match
+  StreamingOptions options = 3;
+}
+
+message StreamingOptions {
+  bool adaptive = 1; // HLS/DASH
+  string drm = 2; // fairplay, widevine, playready
+  uint32 start_time = 3; // seconds
+  uint32 end_time = 4; // seconds
+  repeated string allowed_qualities = 5; // 1080p, 720p, etc.
+}
+
+message GetStreamUrlResponse {
+  string stream_url = 1;
+  string manifest_url = 2; // HLS/DASH manifest
+  string drm_license_url = 3;
+  repeated StreamQuality qualities = 4;
+  apexos.common.v1.Timestamp expires_at = 5;
+}
+
+message StreamQuality {
+  string name = 1;
+  string url = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  uint32 bitrate = 5; // kbps
+  string mime_type = 6;
+}
+
+message GetSignedUrlRequest {
+  string media_id = 1;
+  string variant_name = 2;
+  apexos.common.v1.Duration ttl = 3;
+  SignedUrlAction action = 4; // GET, PUT, DELETE
+}
+
+enum SignedUrlAction {
+  SIGNED_URL_ACTION_UNSPECIFIED = 0;
+  SIGNED_URL_ACTION_GET = 1;
+  SIGNED_URL_ACTION_PUT = 2;
+  SIGNED_URL_ACTION_DELETE = 3;
+}
+
+message GetSignedUrlResponse {
+  string signed_url = 1;
+  apexos.common.v1.Timestamp expires_at = 2;
+  map<string, string> required_headers = 3;
+}
+
+// Bulk operations
+message BulkDeleteMediaRequest {
+  repeated string media_ids = 1;
+  bool force = 2;
+}
+
+message BulkDeleteMediaResponse {
+  repeated string deleted_ids = 1;
+  repeated BulkDeleteError errors = 2;
+}
+
+message BulkDeleteError {
+  string media_id = 1;
+  string error = 2;
+}

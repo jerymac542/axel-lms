@@ -1,0 +1,366 @@
+syntax = "proto3";
+
+package apexos.auth.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/auth/v1";
+option java_package = "io.apexos.axel.auth.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Auth.V1";
+
+import "apexos/common/v1/common.proto";
+
+// Authentication service
+
+service AuthService {
+  // User authentication
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (apexos.common.v1.Empty);
+  rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  
+  // User registration
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc VerifyEmail(VerifyEmailRequest) returns (apexos.common.v1.Empty);
+  rpc ResendVerification(ResendVerificationRequest) returns (apexos.common.v1.Empty);
+  
+  // Password management
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (apexos.common.v1.Empty);
+  rpc ResetPassword(ResetPasswordRequest) returns (apexos.common.v1.Empty);
+  rpc ChangePassword(ChangePasswordRequest) returns (apexos.common.v1.Empty);
+  
+  // MFA
+  rpc EnableMfa(EnableMfaRequest) returns (EnableMfaResponse);
+  rpc DisableMfa(DisableMfaRequest) returns (apexos.common.v1.Empty);
+  rpc VerifyMfa(VerifyMfaRequest) returns (VerifyMfaResponse);
+  rpc GenerateBackupCodes(GenerateBackupCodesRequest) returns (GenerateBackupCodesResponse);
+  
+  // Sessions
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (apexos.common.v1.Empty);
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (apexos.common.v1.Empty);
+  
+  // API Keys
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse);
+  rpc ListApiKeys(ListApiKeysRequest) returns (ListApiKeysResponse);
+  rpc RevokeApiKey(RevokeApiKeyRequest) returns (apexos.common.v1.Empty);
+  
+  // OAuth2
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  rpc Token(TokenRequest) returns (TokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (apexos.common.v1.Empty);
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse);
+  rpc Jwks(JwksRequest) returns (JwksResponse);
+}
+
+// Login
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string mfa_code = 3;
+  string backup_code = 4;
+  bool remember_me = 5;
+  apexos.common.v1.RequestMetadata metadata = 6;
+}
+
+message LoginResponse {
+  TokenResponse tokens = 1;
+  User user = 2;
+  bool mfa_required = 3;
+  MfaChallenge mfa_challenge = 4;
+}
+
+message MfaChallenge {
+  string method = 1; // totp, webauthn, backup_code
+  string challenge = 2;
+}
+
+// Logout
+message LogoutRequest {
+  string refresh_token = 1;
+  bool all_devices = 2;
+}
+
+// Token refresh
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message TokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string id_token = 3;
+  string token_type = 4;
+  int64 expires_in = 5;
+  int64 refresh_expires_in = 6;
+  repeated string scope = 7;
+}
+
+// Token verification
+message VerifyTokenRequest {
+  string token = 1;
+  repeated string required_scopes = 2;
+}
+
+message VerifyTokenResponse {
+  bool valid = 1;
+  TokenClaims claims = 2;
+}
+
+message TokenClaims {
+  string sub = 1;
+  string iss = 2;
+  repeated string aud = 3;
+  int64 exp = 4;
+  int64 iat = 5;
+  string jti = 6;
+  repeated string scope = 7;
+  repeated string permissions = 8;
+  string tenant_id = 9;
+  string organization_id = 10;
+  repeated string roles = 11;
+  string session_id = 12;
+  bool mfa_verified = 13;
+  map<string, string> custom = 14;
+}
+
+// Registration
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  apexos.common.v1.Locale locale = 4;
+  string timezone = 5;
+  apexos.common.v1.RequestMetadata metadata = 6;
+}
+
+message RegisterResponse {
+  User user = 1;
+  bool email_verification_required = 2;
+}
+
+// Email verification
+message VerifyEmailRequest {
+  string token = 1;
+}
+
+message ResendVerificationRequest {
+  string email = 1;
+}
+
+// Password reset
+message RequestPasswordResetRequest {
+  string email = 1;
+  apexos.common.v1.RequestMetadata metadata = 2;
+}
+
+message ResetPasswordRequest {
+  string token = 1;
+  string password = 2;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+// MFA
+message EnableMfaRequest {
+  string method = 1; // totp, webauthn
+}
+
+message EnableMfaResponse {
+  string secret = 1;
+  string qr_code_url = 2;
+  string backup_codes = 3;
+}
+
+message DisableMfaRequest {
+  string method = 1;
+  string code = 2; // Current MFA code for verification
+}
+
+message VerifyMfaRequest {
+  string method = 1;
+  string code = 2;
+}
+
+message VerifyMfaResponse {
+  bool verified = 1;
+}
+
+message GenerateBackupCodesRequest {}
+
+message GenerateBackupCodesResponse {
+  repeated string codes = 1;
+}
+
+// Sessions
+message ListSessionsRequest {
+  apexos.common.v1.PaginationRequest pagination = 1;
+}
+
+message ListSessionsResponse {
+  repeated Session sessions = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message Session {
+  string id = 1;
+  string user_id = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+  apexos.common.v1.Timestamp created_at = 5;
+  apexos.common.v1.Timestamp last_activity = 6;
+  bool current = 7;
+  bool mfa_verified = 8;
+}
+
+message RevokeSessionRequest {
+  string session_id = 1;
+}
+
+message RevokeAllSessionsRequest {}
+
+// API Keys
+message CreateApiKeyRequest {
+  string name = 1;
+  repeated string scopes = 2;
+  apexos.common.v1.Timestamp expires_at = 3;
+}
+
+message CreateApiKeyResponse {
+  string api_key = 1; // Only shown once
+  ApiKey key = 2;
+}
+
+message ApiKey {
+  string id = 1;
+  string name = 2;
+  string prefix = 3;
+  repeated string scopes = 4;
+  apexos.common.v1.Timestamp created_at = 5;
+  apexos.common.v1.Timestamp expires_at = 6;
+  apexos.common.v1.Timestamp last_used_at = 7;
+  bool revoked = 8;
+}
+
+message ListApiKeysRequest {
+  apexos.common.v1.PaginationRequest pagination = 1;
+}
+
+message ListApiKeysResponse {
+  repeated ApiKey keys = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message RevokeApiKeyRequest {
+  string key_id = 1;
+}
+
+// OAuth2
+message AuthorizeRequest {
+  string client_id = 1;
+  string redirect_uri = 2;
+  string response_type = 3;
+  string scope = 4;
+  string state = 5;
+  string code_challenge = 6;
+  string code_challenge_method = 7;
+}
+
+message AuthorizeResponse {
+  string authorization_code = 1;
+  string state = 2;
+}
+
+message TokenRequest {
+  string grant_type = 1;
+  string client_id = 2;
+  string client_secret = 3;
+  string code = 4;
+  string redirect_uri = 5;
+  string refresh_token = 6;
+  string scope = 7;
+  string device_code = 8;
+}
+
+message RevokeTokenRequest {
+  string token = 1;
+  string token_type_hint = 2; // access_token, refresh_token
+  string client_id = 3;
+  string client_secret = 4;
+}
+
+message IntrospectTokenRequest {
+  string token = 1;
+  string token_type_hint = 2;
+  string client_id = 3;
+  string client_secret = 4;
+}
+
+message IntrospectTokenResponse {
+  bool active = 1;
+  string scope = 2;
+  string client_id = 3;
+  string username = 4;
+  int64 exp = 5;
+  int64 iat = 6;
+  string sub = 7;
+  string token_type = 8;
+  repeated string aud = 9;
+  string jti = 10;
+}
+
+message UserInfoRequest {
+  string access_token = 1;
+}
+
+message UserInfoResponse {
+  string sub = 1;
+  string name = 2;
+  string email = 3;
+  bool email_verified = 4;
+  string preferred_username = 5;
+  string locale = 6;
+  string zoneinfo = 7;
+  map<string, string> custom = 8;
+}
+
+message JwksRequest {}
+
+message JwksResponse {
+  repeated Jwk keys = 1;
+}
+
+message Jwk {
+  string kty = 1;
+  string use = 2;
+  string kid = 3;
+  string alg = 4;
+  string n = 5;
+  string e = 6;
+  string x = 7;
+  string y = 8;
+  string crv = 9;
+  string d = 10;
+}
+
+// User
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  bool email_verified = 4;
+  bool phone_verified = 5;
+  apexos.common.v1.Locale locale = 6;
+  string timezone = 7;
+  string avatar_url = 8;
+  apexos.common.v1.Timestamp created_at = 9;
+  apexos.common.v1.Timestamp updated_at = 10;
+  apexos.common.v1.Timestamp last_login_at = 11;
+  bool active = 12;
+  bool mfa_enabled = 13;
+  repeated string mfa_methods = 14;
+  map<string, string> metadata = 15;
+}

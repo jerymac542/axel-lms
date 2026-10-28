@@ -1,0 +1,289 @@
+syntax = "proto3";
+
+package apexos.enrollment.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/enrollment/v1";
+option java_package = "io.apexos.axel.enrollment.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Enrollment.V1";
+
+import "apexos/common/v1/common.proto";
+import "apexos/course/v1/course.proto";
+
+// Enrollment service
+
+service EnrollmentService {
+  // Enrollment CRUD
+  rpc CreateEnrollment(CreateEnrollmentRequest) returns (Enrollment);
+  rpc GetEnrollment(GetEnrollmentRequest) returns (Enrollment);
+  rpc UpdateEnrollment(UpdateEnrollmentRequest) returns (Enrollment);
+  rpc DeleteEnrollment(DeleteEnrollmentRequest) returns (apexos.common.v1.Empty);
+  rpc ListEnrollments(ListEnrollmentsRequest) returns (ListEnrollmentsResponse);
+  
+  // Bulk operations
+  rpc BulkEnroll(BulkEnrollRequest) returns (BulkEnrollResponse);
+  rpc BulkUnenroll(BulkUnenrollRequest) returns (BulkUnenrollResponse);
+  
+  // Enrollment status
+  rpc CompleteEnrollment(CompleteEnrollmentRequest) returns (Enrollment);
+  rpc DropEnrollment(DropEnrollmentRequest) returns (Enrollment);
+  rpc SuspendEnrollment(SuspendEnrollmentRequest) returns (Enrollment);
+  rpc ReactivateEnrollment(ReactivateEnrollmentRequest) returns (Enrollment);
+  
+  // Waitlist
+  rpc JoinWaitlist(JoinWaitlistRequest) returns (WaitlistEntry);
+  rpc LeaveWaitlist(LeaveWaitlistRequest) returns (apexos.common.v1.Empty);
+  rpc GetWaitlist(GetWaitlistRequest) returns (GetWaitlistResponse);
+  
+  // Enrollment reports
+  rpc GetEnrollmentReport(GetEnrollmentReportRequest) returns (EnrollmentReport);
+  rpc ExportEnrollments(ExportEnrollmentsRequest) returns (ExportEnrollmentsResponse);
+}
+
+// Enrollment
+message Enrollment {
+  string id = 1;
+  string course_id = 2;
+  string user_id = 3;
+  string organization_id = 4;
+  EnrollmentRole role = 5;
+  EnrollmentStatus status = 6;
+  EnrollmentSource source = 7;
+  string enrolled_by = 8;
+  apexos.common.v1.Timestamp enrolled_at = 9;
+  apexos.common.v1.Timestamp started_at = 10;
+  apexos.common.v1.Timestamp completed_at = 11;
+  apexos.common.v1.Timestamp dropped_at = 12;
+  string drop_reason = 13;
+  double progress = 14; // 0-100
+  double score = 15;
+  string grade = 16;
+  map<string, string> custom_fields = 17;
+  apexos.common.v1.Timestamp created_at = 18;
+  apexos.common.v1.Timestamp updated_at = 19;
+}
+
+enum EnrollmentRole {
+  ENROLLMENT_ROLE_UNSPECIFIED = 0;
+  ENROLLMENT_ROLE_STUDENT = 1;
+  ENROLLMENT_ROLE_TEACHING_ASSISTANT = 2;
+  ENROLLMENT_ROLE_INSTRUCTOR = 3;
+  ENROLLMENT_ROLE_COURSE_DESIGNER = 4;
+  ENROLLMENT_ROLE_OBSERVER = 5;
+  ENROLLMENT_ROLE_AUDITOR = 6;
+}
+
+enum EnrollmentStatus {
+  ENROLLMENT_STATUS_UNSPECIFIED = 0;
+  ENROLLMENT_STATUS_PENDING = 1;
+  ENROLLMENT_STATUS_ACTIVE = 2;
+  ENROLLMENT_STATUS_COMPLETED = 3;
+  ENROLLMENT_STATUS_DROPPED = 4;
+  ENROLLMENT_STATUS_SUSPENDED = 5;
+  ENROLLMENT_STATUS_EXPIRED = 6;
+  ENROLLMENT_STATUS_WAITLISTED = 7;
+}
+
+enum EnrollmentSource {
+  ENROLLMENT_SOURCE_UNSPECIFIED = 0;
+  ENROLLMENT_SOURCE_SELF = 1;
+  ENROLLMENT_SOURCE_INSTRUCTOR = 2;
+  ENROLLMENT_SOURCE_ADMIN = 3;
+  ENROLLMENT_SOURCE_SIS = 4;
+  ENROLLMENT_SOURCE_LTI = 5;
+  ENROLLMENT_SOURCE_API = 6;
+  ENROLLMENT_SOURCE_BULK = 7;
+}
+
+// Requests
+message CreateEnrollmentRequest {
+  string course_id = 1;
+  string user_id = 2;
+  EnrollmentRole role = 3;
+  string organization_id = 4;
+  string enrolled_by = 5;
+  map<string, string> custom_fields = 6;
+}
+
+message GetEnrollmentRequest {
+  string id = 1;
+  bool include_progress = 2;
+}
+
+message UpdateEnrollmentRequest {
+  string id = 1;
+  EnrollmentRole role = 2;
+  EnrollmentStatus status = 3;
+  double progress = 4;
+  double score = 5;
+  string grade = 6;
+  map<string, string> custom_fields = 7;
+}
+
+message DeleteEnrollmentRequest {
+  string id = 1;
+}
+
+message ListEnrollmentsRequest {
+  string course_id = 1;
+  string user_id = 2;
+  string organization_id = 3;
+  EnrollmentStatus status = 4;
+  EnrollmentRole role = 5;
+  apexos.common.v1.PaginationRequest pagination = 6;
+  apexos.common.v1.SortRequest sort = 7;
+}
+
+message ListEnrollmentsResponse {
+  repeated Enrollment enrollments = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message BulkEnrollRequest {
+  string course_id = 1;
+  repeated string user_ids = 2;
+  EnrollmentRole role = 3;
+  string organization_id = 4;
+  string enrolled_by = 5;
+}
+
+message BulkEnrollResponse {
+  repeated Enrollment enrollments = 1;
+  repeated BulkEnrollError errors = 2;
+}
+
+message BulkEnrollError {
+  string user_id = 1;
+  string error = 2;
+}
+
+message BulkUnenrollRequest {
+  string course_id = 1;
+  repeated string user_ids = 2;
+  string dropped_by = 3;
+  string reason = 4;
+}
+
+message BulkUnenrollResponse {
+  repeated string success_ids = 1;
+  repeated BulkUnenrollError errors = 2;
+}
+
+message BulkUnenrollError {
+  string user_id = 1;
+  string error = 2;
+}
+
+message CompleteEnrollmentRequest {
+  string id = 1;
+  double final_score = 2;
+  string final_grade = 3;
+  string completed_by = 4;
+}
+
+message DropEnrollmentRequest {
+  string id = 1;
+  string dropped_by = 2;
+  string reason = 3;
+}
+
+message SuspendEnrollmentRequest {
+  string id = 1;
+  string suspended_by = 2;
+  string reason = 3;
+}
+
+message ReactivateEnrollmentRequest {
+  string id = 1;
+  string reactivated_by = 2;
+}
+
+// Waitlist
+message JoinWaitlistRequest {
+  string course_id = 1;
+  string user_id = 2;
+  string organization_id = 3;
+}
+
+message WaitlistEntry {
+  string id = 1;
+  string course_id = 2;
+  string user_id = 3.
+  uint32 position = 4.
+  apexos.common.v1.Timestamp joined_at = 5.
+  WaitlistStatus status = 6.
+}
+
+enum WaitlistStatus {
+  WAITLIST_STATUS_UNSPECIFIED = 0;
+  WAITLIST_STATUS_WAITING = 1;
+  WAITLIST_STATUS_OFFERED = 2;
+  WAITLIST_STATUS_ENROLLED = 3;
+  WAITLIST_STATUS_EXPIRED = 4;
+  WAITLIST_STATUS_REMOVED = 5;
+}
+
+message LeaveWaitlistRequest {
+  string waitlist_id = 1;
+}
+
+message GetWaitlistRequest {
+  string course_id = 1;
+  apexos.common.v1.PaginationRequest pagination = 2;
+}
+
+message GetWaitlistResponse {
+  repeated WaitlistEntry entries = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+// Reports
+message GetEnrollmentReportRequest {
+  string course_id = 1;
+  string organization_id = 2;
+  apexos.common.v1.Timestamp start_date = 3;
+  apexos.common.v1.Timestamp end_date = 4;
+  EnrollmentStatus status = 5;
+}
+
+message EnrollmentReport {
+  string course_id = 1;
+  string organization_id = 2;
+  uint64 total_enrollments = 3;
+  uint64 active_enrollments = 4;
+  uint64 completed_enrollments = 5;
+  uint64 dropped_enrollments = 6;
+  double completion_rate = 7;
+  double average_score = 8;
+  map<string, uint64> enrollments_by_role = 9;
+  map<string, uint64> enrollments_by_source = 10.
+  repeated DailyEnrollmentStats daily = 11.
+}
+
+message DailyEnrollmentStats {
+  string date = 1;
+  uint64 new_enrollments = 2;
+  uint64 completed = 3;
+  uint64 dropped = 4;
+}
+
+message ExportEnrollmentsRequest {
+  string course_id = 1;
+  string organization_id = 2;
+  EnrollmentStatus status = 3;
+  apexos.common.v1.Timestamp start_date = 4;
+  apexos.common.v1.Timestamp end_date = 5;
+  ExportFormat format = 6;
+}
+
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_CSV = 1;
+  EXPORT_FORMAT_JSON = 2;
+  EXPORT_FORMAT_XLSX = 3;
+}
+
+message ExportEnrollmentsResponse {
+  string download_url = 1;
+  apexos.common.v1.Timestamp expires_at = 2;
+}

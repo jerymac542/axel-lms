@@ -1,0 +1,405 @@
+syntax = "proto3";
+
+package apexos.course.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/course/v1";
+option java_package = "io.apexos.axel.course.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Course.V1";
+
+import "apexos/common/v1/common.proto";
+import "apexos/tenant/v1/tenant.proto";
+
+// Course management service
+
+service CourseService {
+  // Course CRUD
+  rpc CreateCourse(CreateCourseRequest) returns (Course);
+  rpc GetCourse(GetCourseRequest) returns (Course);
+  rpc UpdateCourse(UpdateCourseRequest) returns (Course);
+  rpc DeleteCourse(DeleteCourseRequest) returns (apexos.common.v1.Empty);
+  rpc ListCourses(ListCoursesRequest) returns (ListCoursesResponse);
+  
+  // Course publishing
+  rpc PublishCourse(PublishCourseRequest) returns (Course);
+  rpc UnpublishCourse(UnpublishCourseRequest) returns (Course);
+  
+  // Course structure
+  rpc GetCourseTree(GetCourseTreeRequest) returns (CourseTree);
+  rpc UpdateCourseTree(UpdateCourseTreeRequest) returns (CourseTree);
+  
+  // Course settings
+  rpc GetCourseSettings(GetCourseSettingsRequest) returns (CourseSettings);
+  rpc UpdateCourseSettings(UpdateCourseSettingsRequest) returns (CourseSettings);
+  
+  // Course media
+  rpc UploadCourseMedia(UploadCourseMediaRequest) returns (UploadCourseMediaResponse);
+  rpc DeleteCourseMedia(DeleteCourseMediaRequest) returns (apexos.common.v1.Empty);
+  
+  // Course cloning/import/export
+  rpc CloneCourse(CloneCourseRequest) returns (Course);
+  rpc ExportCourse(ExportCourseRequest) returns (ExportCourseResponse);
+  rpc ImportCourse(ImportCourseRequest) returns (Course);
+  
+  // Course progress/analytics
+  rpc GetCourseProgress(GetCourseProgressRequest) returns (CourseProgress);
+  rpc GetCourseAnalytics(GetCourseAnalyticsRequest) returns (CourseAnalytics);
+}
+
+// Course
+message Course {
+  string id = 1;
+  string organization_id = 2;
+  string title = 3;
+  string description = 4;
+  string short_description = 5;
+  CourseStatus status = 6;
+  CourseVisibility visibility = 7;
+  string language = 8;
+  string thumbnail_url = 9;
+  string banner_url = 10;
+  CourseSettings settings = 11;
+  CourseMetadata metadata = 12;
+  apexos.common.v1.Timestamp created_at = 13;
+  apexos.common.v1.Timestamp updated_at = 14;
+  apexos.common.v1.Timestamp published_at = 15;
+  apexos.common.v1.Timestamp deleted_at = 16;
+  string created_by = 17;
+  string updated_by = 18;
+}
+
+enum CourseStatus {
+  COURSE_STATUS_UNSPECIFIED = 0;
+  COURSE_STATUS_DRAFT = 1;
+  COURSE_STATUS_PUBLISHED = 2;
+  COURSE_STATUS_ARCHIVED = 3;
+  COURSE_STATUS_DELETED = 4;
+}
+
+enum CourseVisibility {
+  COURSE_VISIBILITY_UNSPECIFIED = 0;
+  COURSE_VISIBILITY_PRIVATE = 1;
+  COURSE_VISIBILITY_ORGANIZATION = 2;
+  COURSE_VISIBILITY_TENANT = 3;
+  COURSE_VISIBILITY_PUBLIC = 4;
+}
+
+message CourseSettings {
+  bool self_enrollment = 1;
+  bool require_approval = 2;
+  bool show_progress = 3;
+  bool allow_discussions = 4;
+  bool allow_annotations = 5;
+  bool certificate_enabled = 6;
+  string certificate_template_id = 7;
+  repeated string prerequisite_course_ids = 8;
+  apexos.common.v1.Timestamp enrollment_start = 9;
+  apexos.common.v1.Timestamp enrollment_end = 10;
+  uint32 max_enrollment = 11;
+  GradingSettings grading = 12;
+  CompletionSettings completion = 13;
+  AccessSettings access = 14;
+}
+
+message GradingSettings {
+  bool enabled = 1;
+  GradingScheme scheme = 2;
+  bool show_grades_to_students = 3;
+  bool show_rankings = 4;
+  GradebookSettings gradebook = 5;
+}
+
+enum GradingScheme {
+  GRADING_SCHEME_UNSPECIFIED = 0;
+  GRADING_SCHEME_PERCENTAGE = 1;
+  GRADING_SCHEME_LETTER = 2;
+  GRADING_SCHEME_PASS_FAIL = 3;
+  GRADING_SCHEME_CUSTOM = 4;
+}
+
+message GradebookSettings {
+  bool enabled = 1;
+  bool auto_calculate = 2;
+  repeated GradeCategory categories = 3;
+}
+
+message GradeCategory {
+  string id = 1;
+  string name = 2;
+  double weight = 3;
+  bool drop_lowest = 4;
+  uint32 drop_count = 5;
+}
+
+message CompletionSettings {
+  bool enabled = 1;
+  CompletionCriteria criteria = 2;
+  uint32 required_score = 3; // Percentage
+  repeated string required_activities = 4;
+}
+
+enum CompletionCriteria {
+  COMPLETION_CRITERIA_UNSPECIFIED = 0;
+  COMPLETION_CRITERIA_ALL_ACTIVITIES = 1;
+  COMPLETION_CRITERIA_SCORE_THRESHOLD = 2;
+  COMPLETION_CRITERIA_MANUAL = 3;
+  COMPLETION_CRITERIA_CUSTOM = 4;
+}
+
+message AccessSettings {
+  repeated string allowed_groups = 1;
+  repeated string denied_groups = 2;
+  repeated string allowed_roles = 3;
+  repeated string denied_roles = 4;
+  bool require_enrollment = 5;
+  bool guest_access = 6;
+}
+
+message CourseMetadata {
+  string subject = 1;
+  string level = 2;
+  repeated string tags = 3;
+  string estimated_duration = 4; // ISO 8601 duration
+  repeated string learning_objectives = 5;
+  repeated string prerequisites = 6;
+  map<string, string> custom = 7;
+}
+
+// Requests
+message CreateCourseRequest {
+  string organization_id = 1;
+  string title = 2;
+  string description = 3.
+  string short_description = 4;
+  CourseVisibility visibility = 5;
+  string language = 6;
+  CourseSettings settings = 7;
+  CourseMetadata metadata = 8;
+}
+
+message GetCourseRequest {
+  string id = 1;
+  bool include_tree = 2;
+  bool include_settings = 3;
+}
+
+message UpdateCourseRequest {
+  string id = 1;
+  string title = 2;
+  string description = 3.
+  string short_description = 4;
+  CourseVisibility visibility = 5;
+  string language = 6.
+  CourseSettings settings = 7.
+  CourseMetadata metadata = 8.
+}
+
+message DeleteCourseRequest {
+  string id = 1;
+}
+
+message ListCoursesRequest {
+  string organization_id = 1;
+  CourseStatus status = 2;
+  CourseVisibility visibility = 3;
+  string search = 4;
+  repeated string tags = 5;
+  apexos.common.v1.PaginationRequest pagination = 6;
+  apexos.common.v1.SortRequest sort = 7;
+}
+
+message ListCoursesResponse {
+  repeated Course courses = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message PublishCourseRequest {
+  string id = 1;
+}
+
+message UnpublishCourseRequest {
+  string id = 1;
+}
+
+message GetCourseTreeRequest {
+  string course_id = 1;
+  uint32 depth = 2;
+}
+
+message CourseTree {
+  repeated CourseNode nodes = 1;
+}
+
+message CourseNode {
+  string id = 1;
+  string course_id = 2.
+  string parent_id = 3.
+  string title = 4.
+  string type = 5. // section, unit, lesson, activity
+  int32 position = 6.
+  bool published = 7.
+  CourseNodeContent content = 8.
+  repeated CourseNode children = 9.
+}
+
+message CourseNodeContent {
+  string content_type = 1. // html, video, scorm, lti, file, link, etc.
+  string content_id = 2.
+  string url = 3.
+  map<string, string> settings = 4.
+}
+
+message UpdateCourseTreeRequest {
+  string course_id = 1.
+  repeated CourseNodeOperation operations = 2.
+}
+
+message CourseNodeOperation {
+  OperationType type = 1.
+  CourseNode node = 2.
+  string parent_id = 3.
+  int32 position = 4.
+}
+
+enum OperationType {
+  OPERATION_TYPE_UNSPECIFIED = 0;
+  OPERATION_TYPE_CREATE = 1;
+  OPERATION_TYPE_UPDATE = 2;
+  OPERATION_TYPE_DELETE = 3;
+  OPERATION_TYPE_MOVE = 4;
+  OPERATION_TYPE_REORDER = 5;
+}
+
+message GetCourseSettingsRequest {
+  string course_id = 1.
+}
+
+message UpdateCourseSettingsRequest {
+  string course_id = 1.
+  CourseSettings settings = 2.
+}
+
+message UploadCourseMediaRequest {
+  string course_id = 1.
+  string node_id = 2.
+  string filename = 3.
+  string mime_type = 4.
+  uint64 size = 5.
+  bytes data = 6.
+}
+
+message UploadCourseMediaResponse {
+  string media_id = 1.
+  string url = 2.
+}
+
+message DeleteCourseMediaRequest {
+  string course_id = 1.
+  string media_id = 2.
+}
+
+message CloneCourseRequest {
+  string source_course_id = 1.
+  string target_organization_id = 2.
+  string title = 3.
+  bool copy_enrollments = 4.
+  bool copy_content = 5.
+}
+
+message ExportCourseRequest {
+  string course_id = 1.
+  ExportFormat format = 2.
+  bool include_enrollments = 3.
+  bool include_grades = 4.
+}
+
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_JSON = 1;
+  EXPORT_FORMAT_XML = 2;
+  EXPORT_FORMAT_QTI = 3;
+  EXPORT_FORMAT_SCORM = 4;
+  EXPORT_FORMAT_COMMON_CARTRIDGE = 5;
+}
+
+message ExportCourseResponse {
+  string download_url = 1.
+  apexos.common.v1.Timestamp expires_at = 2.
+}
+
+message ImportCourseRequest {
+  string organization_id = 1.
+  string import_url = 2.
+  ExportFormat format = 3.
+  string title = 4.
+}
+
+message GetCourseProgressRequest {
+  string course_id = 1.
+  string user_id = 2.
+}
+
+message CourseProgress {
+  string course_id = 1.
+  string user_id = 2.
+  double completion_percentage = 3.
+  double score = 4.
+  repeated ActivityProgress activities = 5.
+  apexos.common.v1.Timestamp started_at = 6.
+  apexos.common.v1.Timestamp last_activity_at = 7.
+  apexos.common.v1.Timestamp completed_at = 8.
+  CompletionStatus status = 9.
+}
+
+enum CompletionStatus {
+  COMPLETION_STATUS_UNSPECIFIED = 0;
+  COMPLETION_STATUS_NOT_STARTED = 1;
+  COMPLETION_STATUS_IN_PROGRESS = 2;
+  COMPLETION_STATUS_COMPLETED = 3;
+  COMPLETION_STATUS_FAILED = 4;
+}
+
+message ActivityProgress {
+  string activity_id = 1.
+  string activity_type = 2.
+  double score = 3.
+  bool completed = 4.
+  uint32 attempts = 5.
+  apexos.common.v1.Timestamp started_at = 6.
+  apexos.common.v1.Timestamp completed_at = 7.
+  map<string, string> data = 8.
+}
+
+message GetCourseAnalyticsRequest {
+  string course_id = 1.
+  apexos.common.v1.Timestamp start_date = 2.
+  apexos.common.v1.Timestamp end_date = 3.
+}
+
+message CourseAnalytics {
+  string course_id = 1.
+  uint64 total_enrollments = 2.
+  uint64 active_students = 3.
+  uint64 completed_students = 4.
+  double average_score = 5.
+  double completion_rate = 6.
+  double average_time_spent = 7. // seconds
+  repeated ActivityAnalytics activities = 8.
+  repeated DailyAnalytics daily = 9.
+}
+
+message ActivityAnalytics {
+  string activity_id = 1.
+  string activity_type = 2.
+  uint64 views = 3.
+  uint64 completions = 4.
+  double average_score = 5.
+  double average_time = 6.
+}
+
+message DailyAnalytics {
+  string date = 1. // YYYY-MM-DD
+  uint64 active_users = 2.
+  uint64 new_enrollments = 3.
+  uint64 completions = 4.
+}

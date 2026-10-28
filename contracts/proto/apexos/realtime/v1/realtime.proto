@@ -1,0 +1,480 @@
+syntax = "proto3";
+
+package apexos.realtime.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/realtime/v1";
+option java_package = "io.apexos.axel.realtime.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Realtime.V1";
+
+import "apexos/common/v1/common.proto";
+
+// Real-time service for WebSocket connections
+
+service RealtimeService {
+  // Connection management
+  rpc Connect(ConnectRequest) returns (ConnectResponse);
+  rpc Disconnect(DisconnectRequest) returns (apexos.common.v1.Empty);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  
+  // Presence
+  rpc SetPresence(SetPresenceRequest) returns (Presence);
+  rpc GetPresence(GetPresenceRequest) returns (Presence);
+  rpc ListPresence(ListPresenceRequest) returns (ListPresenceResponse);
+  rpc SubscribePresence(SubscribePresenceRequest) returns (stream PresenceEvent);
+  
+  // Channels
+  rpc JoinChannel(JoinChannelRequest) returns (Channel);
+  rpc LeaveChannel(LeaveChannelRequest) returns (apexos.common.v1.Empty);
+  rpc GetChannel(GetChannelRequest) returns (Channel);
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc SendMessage(SendMessageRequest) returns (MessageAck);
+  rpc BroadcastMessage(BroadcastMessageRequest) returns (BroadcastAck);
+  
+  // Direct messages
+  rpc SendDirectMessage(SendDirectMessageRequest) returns (MessageAck);
+  rpc GetDirectMessages(GetDirectMessagesRequest) returns (GetDirectMessagesResponse);
+  
+  // Typing indicators
+  rpc SetTyping(SetTypingRequest) returns (apexos.common.v1.Empty);
+  
+  // Collaboration
+  rpc JoinCollaboration(JoinCollaborationRequest) returns (CollaborationSession);
+  rpc LeaveCollaboration(LeaveCollaborationRequest) returns (apexos.common.v1.Empty);
+  rpc SendCollaborationOperation(SendCollaborationOperationRequest) returns (OperationAck);
+  rpc GetCollaborationState(GetCollaborationStateRequest) returns (CollaborationState);
+  
+  // Notifications
+  rpc SendNotification(SendNotificationRequest) returns (NotificationAck);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkNotificationRead(MarkNotificationReadRequest) returns (apexos.common.v1.Empty);
+  rpc MarkAllNotificationsRead(MarkAllNotificationsReadRequest) returns (apexos.common.v1.Empty);
+}
+
+// Connection
+message ConnectRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+  string organization_id = 3;
+  string session_id = 4;
+  string device_id = 5;
+  string platform = 6; // web, ios, android, desktop
+  string app_version = 7;
+  map<string, string> capabilities = 8;
+  apexos.common.v1.RequestMetadata metadata = 9;
+}
+
+message ConnectResponse {
+  string connection_id = 1;
+  string server_id = 2;
+  apexos.common.v1.Duration heartbeat_interval = 3;
+  repeated string subscribed_channels = 4;
+  Presence presence = 5;
+}
+
+message DisconnectRequest {
+  string connection_id = 1;
+  string reason = 2;
+}
+
+message HeartbeatRequest {
+  string connection_id = 1;
+  int64 client_timestamp = 2;
+}
+
+message HeartbeatResponse {
+  int64 server_timestamp = 1;
+}
+
+// Presence
+message Presence {
+  string user_id = 1;
+  string tenant_id = 2;
+  string organization_id = 3;
+  PresenceStatus status = 4;
+  string status_message = 5;
+  string activity = 6; // viewing_course, editing_content, in_meeting, etc.
+  string activity_id = 7;
+  map<string, string> metadata = 8;
+  apexos.common.v1.Timestamp last_seen = 9;
+  repeated ConnectionInfo connections = 10;
+}
+
+message ConnectionInfo {
+  string connection_id = 1;
+  string platform = 2;
+  string app_version = 3;
+  apexos.common.v1.Timestamp connected_at = 4;
+  bool is_active = 5;
+}
+
+enum PresenceStatus {
+  PRESENCE_STATUS_UNSPECIFIED = 0;
+  PRESENCE_STATUS_ONLINE = 1;
+  PRESENCE_STATUS_AWAY = 2;
+  PRESENCE_STATUS_BUSY = 3;
+  PRESENCE_STATUS_OFFLINE = 4;
+  PRESENCE_STATUS_INVISIBLE = 5;
+}
+
+message SetPresenceRequest {
+  string user_id = 1;
+  PresenceStatus status = 2;
+  string status_message = 3;
+  string activity = 4;
+  string activity_id = 5;
+  map<string, string> metadata = 6;
+}
+
+message GetPresenceRequest {
+  string user_id = 1;
+}
+
+message ListPresenceRequest {
+  string tenant_id = 1;
+  string organization_id = 2;
+  repeated string user_ids = 3;
+  PresenceStatus status = 4;
+  apexos.common.v1.PaginationRequest pagination = 5;
+}
+
+message ListPresenceResponse {
+  repeated Presence presences = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+}
+
+message PresenceEvent {
+  string user_id = 1;
+  PresenceEventType type = 2;
+  Presence presence = 3;
+  apexos.common.v1.Timestamp timestamp = 4;
+}
+
+enum PresenceEventType {
+  PRESENCE_EVENT_TYPE_UNSPECIFIED = 0;
+  PRESENCE_EVENT_TYPE_ONLINE = 1;
+  PRESENCE_EVENT_TYPE_OFFLINE = 2;
+  PRESENCE_EVENT_TYPE_STATUS_CHANGED = 3;
+  PRESENCE_EVENT_TYPE_ACTIVITY_CHANGED = 4;
+}
+
+// Channels
+message Channel {
+  string id = 1;
+  string name = 2;
+  ChannelType type = 3;
+  string tenant_id = 4;
+  string organization_id = 5;
+  string course_id = 6;
+  string created_by = 7.
+  bool is_private = 8.
+  repeated string member_ids = 9.
+  repeated string moderator_ids = 10.
+  ChannelSettings settings = 11.
+  apexos.common.v1.Timestamp created_at = 12.
+  apexos.common.v1.Timestamp updated_at = 13.
+}
+
+enum ChannelType {
+  CHANNEL_TYPE_UNSPECIFIED = 0;
+  CHANNEL_TYPE_PUBLIC = 1;
+  CHANNEL_TYPE_PRIVATE = 2;
+  CHANNEL_TYPE_DIRECT = 3;
+  CHANNEL_TYPE_COURSE = 4;
+  CHANNEL_TYPE_GROUP = 5;
+  CHANNEL_TYPE_ANNOUNCEMENT = 6;
+  CHANNEL_TYPE_SUPPORT = 7;
+}
+
+message ChannelSettings {
+  bool allow_reactions = 1.
+  bool allow_threads = 2.
+  bool allow_file_uploads = 3.
+  bool allow_mentions = 4.
+  bool moderated = 5.
+  bool read_only = 6.
+  repeated string allowed_roles = 7.
+  map<string, string> custom = 8.
+}
+
+message JoinChannelRequest {
+  string user_id = 1.
+  string channel_id = 2.
+  bool hidden = 3. // Don't show in member list
+}
+
+message LeaveChannelRequest {
+  string user_id = 1.
+  string channel_id = 2.
+}
+
+message GetChannelRequest {
+  string channel_id = 1.
+}
+
+message ListChannelsRequest {
+  string tenant_id = 1.
+  string organization_id = 2.
+  string course_id = 3.
+  ChannelType type = 4.
+  string user_id = 5. // Channels user is member of
+  apexos.common.v1.PaginationRequest pagination = 6.
+}
+
+message ListChannelsResponse {
+  repeated Channel channels = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+// Messages
+message Message {
+  string id = 1.
+  string channel_id = 2.
+  string user_id = 3.
+  string content = 4.
+  MessageType type = 5.
+  map<string, string> metadata = 6.
+  repeated Reaction reactions = 7.
+  MessageReference reference = 8. // For replies/threads
+  apexos.common.v1.Timestamp created_at = 9.
+  apexos.common.v1.Timestamp updated_at = 10.
+  apexos.common.v1.Timestamp deleted_at = 11.
+  bool edited = 12.
+  bool system = 13.
+}
+
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  MESSAGE_TYPE_TEXT = 1;
+  MESSAGE_TYPE_HTML = 2;
+  MESSAGE_TYPE_MARKDOWN = 3;
+  MESSAGE_TYPE_SYSTEM = 4;
+  MESSAGE_TYPE_FILE = 5;
+  MESSAGE_TYPE_IMAGE = 6;
+  MESSAGE_TYPE_VIDEO = 7;
+  MESSAGE_TYPE_AUDIO = 8;
+  MESSAGE_TYPE_EMBED = 9;
+  MESSAGE_TYPE_POLL = 10;
+  MESSAGE_TYPE_CODE = 11;
+  MESSAGE_TYPE_ANNOUNCEMENT = 12;
+}
+
+message MessageReference {
+  string message_id = 1.
+  string channel_id = 2.
+  string content_preview = 3.
+}
+
+message Reaction {
+  string emoji = 1.
+  repeated string user_ids = 2.
+  uint32 count = 3.
+}
+
+message SendMessageRequest {
+  string channel_id = 1.
+  string user_id = 2.
+  string content = 3.
+  MessageType type = 4.
+  map<string, string> metadata = 5.
+  MessageReference reference = 6.
+}
+
+message MessageAck {
+  string message_id = 1.
+  apexos.common.v1.Timestamp timestamp = 2.
+}
+
+message BroadcastMessageRequest {
+  string channel_id = 1.
+  string user_id = 2.
+  string content = 3.
+  MessageType type = 4.
+  map<string, string> metadata = 5.
+  repeated string exclude_user_ids = 6.
+}
+
+message BroadcastAck {
+  string message_id = 1.
+  int32 delivered_count = 2.
+  apexos.common.v1.Timestamp timestamp = 3.
+}
+
+// Direct messages
+message DirectMessage {
+  string id = 1.
+  string from_user_id = 2.
+  string to_user_id = 3.
+  string content = 4.
+  MessageType type = 5.
+  map<string, string> metadata = 6.
+  bool read = 7.
+  apexos.common.v1.Timestamp created_at = 8.
+}
+
+message SendDirectMessageRequest {
+  string from_user_id = 1.
+  string to_user_id = 2.
+  string content = 3.
+  MessageType type = 4.
+  map<string, string> metadata = 5.
+}
+
+message GetDirectMessagesRequest {
+  string user_id = 1.
+  string other_user_id = 2.
+  apexos.common.v1.PaginationRequest pagination = 3.
+  apexos.common.v1.Timestamp before = 4.
+  apexos.common.v1.Timestamp after = 5.
+}
+
+message GetDirectMessagesResponse {
+  repeated DirectMessage messages = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+// Typing indicators
+message SetTypingRequest {
+  string user_id = 1.
+  string channel_id = 2.
+  bool typing = 3.
+}
+
+// Collaboration
+message CollaborationSession {
+  string id = 1.
+  string resource_type = 2. // document, whiteboard, code, etc.
+  string resource_id = 3.
+  string user_id = 4.
+  CollaborationRole role = 5.
+  string color = 6. // User's cursor color
+  apexos.common.v1.Timestamp joined_at = 7.
+}
+
+enum CollaborationRole {
+  COLLABORATION_ROLE_UNSPECIFIED = 0;
+  COLLABORATION_ROLE_VIEWER = 1;
+  COLLABORATION_ROLE_EDITOR = 2;
+  COLLABORATION_ROLE_OWNER = 3;
+}
+
+message JoinCollaborationRequest {
+  string resource_type = 1.
+  string resource_id = 2.
+  string user_id = 3.
+  CollaborationRole role = 4.
+}
+
+message LeaveCollaborationRequest {
+  string session_id = 1.
+}
+
+message SendCollaborationOperationRequest {
+  string session_id = 1.
+  string operation_id = 2. // CRDT/OT operation ID
+  string operation_type = 3. // insert, delete, retain, etc.
+  google.protobuf.Value operation_data = 4.
+  int64 revision = 5.
+}
+
+message OperationAck {
+  string operation_id = 1.
+  int64 revision = 2.
+  bool accepted = 3.
+  string error = 4.
+}
+
+message GetCollaborationStateRequest {
+  string resource_type = 1.
+  string resource_id = 2.
+}
+
+message CollaborationState {
+  string resource_type = 1.
+  string resource_id = 2.
+  int64 revision = 3.
+  google.protobuf.Value state = 4.
+  repeated CollaborationSession sessions = 5.
+  apexos.common.v1.Timestamp last_modified = 6.
+}
+
+// Notifications
+message Notification {
+  string id = 1.
+  string user_id = 2.
+  NotificationType type = 3.
+  string title = 4.
+  string body = 5.
+  string action_url = 6.
+  string action_text = 7.
+  string icon_url = 8.
+  map<string, string> data = 9.
+  NotificationPriority priority = 10.
+  bool read = 11.
+  apexos.common.v1.Timestamp created_at = 12.
+  apexos.common.v1.Timestamp read_at = 13.
+  apexos.common.v1.Timestamp expires_at = 14.
+}
+
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_INFO = 1;
+  NOTIFICATION_TYPE_SUCCESS = 2;
+  NOTIFICATION_TYPE_WARNING = 3;
+  NOTIFICATION_TYPE_ERROR = 4;
+  NOTIFICATION_TYPE_ASSIGNMENT = 5;
+  NOTIFICATION_TYPE_GRADE = 6;
+  NOTIFICATION_TYPE_ENROLLMENT = 7;
+  NOTIFICATION_TYPE_DISCUSSION = 8;
+  NOTIFICATION_TYPE_MENTION = 9;
+  NOTIFICATION_TYPE_SYSTEM = 10;
+  NOTIFICATION_TYPE_SECURITY = 11;
+  NOTIFICATION_TYPE_MARKETING = 12;
+}
+
+enum NotificationPriority {
+  NOTIFICATION_PRIORITY_UNSPECIFIED = 0;
+  NOTIFICATION_PRIORITY_LOW = 1;
+  NOTIFICATION_PRIORITY_NORMAL = 2;
+  NOTIFICATION_PRIORITY_HIGH = 3;
+  NOTIFICATION_PRIORITY_URGENT = 4;
+}
+
+message SendNotificationRequest {
+  string user_id = 1.
+  NotificationType type = 2.
+  string title = 3.
+  string body = 4.
+  string action_url = 5.
+  string action_text = 6.
+  string icon_url = 7.
+  map<string, string> data = 8.
+  NotificationPriority priority = 9.
+  apexos.common.v1.Duration ttl = 10.
+}
+
+message NotificationAck {
+  string notification_id = 1.
+  apexos.common.v1.Timestamp timestamp = 2.
+}
+
+message ListNotificationsRequest {
+  string user_id = 1.
+  bool unread_only = 2.
+  NotificationType type = 3.
+  apexos.common.v1.PaginationRequest pagination = 4.
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+  int32 unread_count = 3.
+}
+
+message MarkNotificationReadRequest {
+  string notification_id = 1.
+}
+
+message MarkAllNotificationsReadRequest {
+  string user_id = 1.
+}

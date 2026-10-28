@@ -1,0 +1,194 @@
+[workspace]
+resolver = "2"
+members = [
+    "auth-service",
+    "realtime-service",
+    "search-service",
+    "media-service",
+    "scheduler-service",
+    "core-lib",
+    "proto",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/apexos/axel-lms"
+authors = ["Apexos Team <team@apexos.io>"]
+categories = ["web-programming", "asynchronous", "network-programming"]
+keywords = ["lms", "education", "apexos", "axel"]
+
+[workspace.dependencies]
+# Core
+tokio = { version = "1.40", features = ["full", "tracing"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+eyre = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Config
+config = { version = "0.14", features = ["serde"] }
+figment = { version = "0.11", features = ["serde", "toml"] }
+secrecy = "0.10"
+zeroize = "1.7"
+
+# HTTP/gRPC
+axum = { version = "0.7", features = ["macros", "multipart", "ws"] }
+tower = { version = "0.4", features = ["util", "limit", "timeout", "retry"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "compression", "auth", "limit", "classify", "latency", "propagate-header", "fs", "add-extension", "set-header", "request-id", "sensitive-headers", "timeout", "decompression"] }
+hyper = { version = "1.3", features = ["full"] }
+tonic = { version = "0.12", features = ["tls", "transport", "serde"] }
+prost = "0.12"
+prost-types = "0.12"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate", "offline"] }
+sqlx-postgres = "0.8"
+deadpool = { version = "0.18", features = ["postgres", "tokio"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager", "scripts", "streams", "cluster"] }
+fred = { version = "7.0", features = ["tokio", "cluster", "sentinel", "streams", "scripting", "serde", "json"] }
+
+# Auth
+jsonwebtoken = { version = "9.2", features = ["chrono"] }
+oauth2 = { version = "5.0", features = ["pkce", "async-http-client-reqwest"] }
+argon2 = { version = "0.5", features = ["simd"] }
+totp = "2.0"
+x509-parser = "0.16"
+rcgen = { version = "0.13", features = ["pem"] }
+
+# Observability
+opentelemetry = { version = "0.28", features = ["trace", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.20", features = ["tonic", "grpc", "http"] }
+opentelemetry-sdk = { version = "0.28", features = ["trace", "metrics", "logs", "rt-tokio", "resource"] }
+opentelemetry-semantic-conventions = "0.28"
+metrics = "0.22"
+metrics-exporter-prometheus = "0.13"
+tracing-opentelemetry = "0.28"
+
+# Messaging
+async-nats = { version = "0.38", features = ["jetstream", "kv", "objstore", "tokio", "tls", "serde_json"] }
+rdkafka = { version = "0.37", features = ["ssl", "sasl", "tokio", "serde"] }
+lapin = { version = "2.8", features = ["tokio", "tls", "serde_json"] }
+
+# Search
+meilisearch-sdk = { version = "0.30", features = ["tokio", "serde"] }
+typesense = "0.4"
+
+# Storage
+aws-sdk-s3 = { version = "1.0", features = ["behavior-version-latest", "presigning", "streaming"] }
+aws-config = { version = "1.0", features = ["behavior-version-latest", "credentials", "region"] }
+minio = "0.6"
+
+# Crypto/Security
+ring = "0.17"
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+x25519-dalek = "2.0"
+ed25519-dalek = "2.0"
+p256 = "0.13"
+p384 = "0.13"
+spki = "0.7"
+pkcs8 = "0.11"
+x509-cert = "0.7"
+webpki = "0.22"
+webpki-roots = "0.25"
+rustls = { version = "0.23", features = ["std", "logging", "dangerous_configuration", "quic", "tls12", "aws-lc-rs"] }
+rustls-pemfile = "1.0"
+tokio-rustls = { version = "0.26", features = ["rustls-0.23", "webpki-roots"] }
+
+# Utils
+uuid = { version = "1.8", features = ["v4", "v7", "serde", "fast-rng"] }
+ulid = "1.0"
+chrono = { version = "0.4", features = ["serde", "tz"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "local-offset"] }
+url = "2.5"
+percent-encoding = "2.3"
+base64 = { version = "0.22", features = ["serde"] }
+mime = "0.3"
+mime_guess = "2.0"
+walkdir = "2.5"
+ignore = "0.13"
+glob = "0.3"
+tempfile = "3.10"
+bytes = "1.7"
+byteorder = "1.5"
+bitflags = "2.5"
+smallvec = "1.13"
+indexmap = { version = "2.2", features = ["serde-1"] }
+dashmap = "6.1"
+parking_lot = "0.12"
+crossbeam = "0.8"
+futures = "0.3"
+pin-project = "1.1"
+pin-project-lite = "0.2"
+fnv = "1.0"
+hex = "0.4"
+urlencoding = "2.1"
+pem = "1.0"
+schemars = "0.8"
+jsonschema = "0.19"
+phonenumbers = "0.2"
+validator = { version = "0.17", features = ["derive", "regex"] }
+garde = { version = "0.6", features = ["derive", "regex", "chrono", "uuid", "email", "url", "ip", "cidr", "phone", "credit_card", "ascii", "unicode"] }
+subtle = "2.5"
+zeroize = { version = "1.7", features = ["derive"] }
+rand = { version = "0.8", features = ["std", "small_rng"] }
+totp-rs = "0.10"
+ring = { version = "0.17", features = ["std", "alloc", "getrandom"] }
+
+# Testing
+testcontainers = { version = "0.20", features = ["tokio", "postgres", "redis", "minio"] }
+mockall = { version = "0.12", features = ["nightly"] }
+wiremock = { version = "0.6", features = ["tokio", "match", "json", "tempfile"] }
+proptest = "1.4"
+
+[workspace.lints.rust]
+unused_crate_dependencies = "warn"
+unused_imports = "warn"
+unused_variables = "warn"
+dead_code = "allow"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+complexity = "warn"
+perf = "warn"
+style = "warn"
+correctness = "warn"
+suspicious = "warn"
+restriction = "off"
+
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+incremental = true
+
+[profile.release]
+opt-level = 3
+debug = false
+overflow-checks = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
+[profile.bench]
+inherits = "release"
+debug = true
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=native"]
+
+[target.aarch64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=native"]

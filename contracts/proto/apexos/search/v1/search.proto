@@ -1,0 +1,360 @@
+syntax = "proto3";
+
+package apexos.search.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/search/v1";
+option java_package = "io.apexos.axel.search.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.Search.V1";
+
+import "apexos/common/v1/common.proto";
+
+// Search service
+
+service SearchService {
+  // Index management
+  rpc CreateIndex(CreateIndexRequest) returns (Index);
+  rpc GetIndex(GetIndexRequest) returns (Index);
+  rpc UpdateIndex(UpdateIndexRequest) returns (Index);
+  rpc DeleteIndex(DeleteIndexRequest) returns (apexos.common.v1.Empty);
+  rpc ListIndexes(ListIndexesRequest) returns (ListIndexesResponse);
+  
+  // Document operations
+  rpc IndexDocument(IndexDocumentRequest) returns (IndexDocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (Document);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (Document);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (apexos.common.v1.Empty);
+  rpc BulkIndexDocuments(BulkIndexDocumentsRequest) returns (BulkIndexDocumentsResponse);
+  
+  // Search
+  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc SearchFacets(SearchFacetsRequest) returns (SearchFacetsResponse);
+  rpc Suggest(SuggestRequest) returns (SuggestResponse);
+  rpc Autocomplete(AutocompleteRequest) returns (AutocompleteResponse);
+  
+  // Index settings
+  rpc UpdateIndexSettings(UpdateIndexSettingsRequest) returns (IndexSettings);
+  rpc GetIndexSettings(GetIndexSettingsRequest) returns (IndexSettings);
+  rpc ResetIndexSettings(ResetIndexSettingsRequest) returns (IndexSettings);
+  
+  // Synonyms
+  rpc CreateSynonym(CreateSynonymRequest) returns (Synonym);
+  rpc DeleteSynonym(DeleteSynonymRequest) returns (apexos.common.v1.Empty);
+  rpc ListSynonyms(ListSynonymsRequest) returns (ListSynonymsResponse);
+  
+  // Stop words
+  rpc AddStopWords(AddStopWordsRequest) returns (apexos.common.v1.Empty);
+  rpc RemoveStopWords(RemoveStopWordsRequest) returns (apexos.common.v1.Empty);
+  rpc ListStopWords(ListStopWordsRequest) returns (ListStopWordsResponse);
+  
+  // Ranking rules
+  rpc UpdateRankingRules(UpdateRankingRulesRequest) returns (RankingRules);
+  rpc GetRankingRules(GetRankingRulesRequest) returns (RankingRules);
+  rpc ResetRankingRules(ResetRankingRulesRequest) returns (RankingRules);
+}
+
+// Index
+message Index {
+  string uid = 1;
+  string name = 2;
+  string primary_key = 3;
+  IndexSettings settings = 4;
+  IndexStats stats = 5;
+  apexos.common.v1.Timestamp created_at = 6;
+  apexos.common.v1.Timestamp updated_at = 7;
+}
+
+message IndexSettings {
+  // Searchable attributes
+  repeated string searchable_attributes = 1;
+  
+  // Filterable attributes
+  repeated string filterable_attributes = 2;
+  
+  // Sortable attributes
+  repeated string sortable_attributes = 3;
+  
+  // Ranking rules
+  repeated string ranking_rules = 4;
+  
+  // Stop words
+  repeated string stop_words = 5;
+  
+  // Synonyms
+  map<string, repeated string> synonyms = 6;
+  
+  // Distinct attribute
+  string distinct_attribute = 7;
+  
+  // Typo tolerance
+  TypoTolerance typo_tolerance = 8;
+  
+  // Faceting
+  FacetingSettings faceting = 9;
+  
+  // Pagination
+  uint32 max_values_per_facet = 10;
+  uint32 max_total_hits = 11;
+}
+
+message TypoTolerance {
+  bool enabled = 1;
+  uint32 min_word_size_for_typos = 2; // oneTypo
+  uint32 min_word_size_for_two_typos = 3; // twoTypos
+  repeated string disable_on_words = 4;
+  repeated string disable_on_attributes = 5;
+}
+
+message FacetingSettings {
+  uint32 max_values_per_facet = 1;
+  bool sort_by_count = 2;
+}
+
+message IndexStats {
+  uint64 number_of_documents = 1;
+  bool is_indexing = 2;
+  uint64 field_distribution = 3; // Simplified
+}
+
+message Document {
+  string id = 1;
+  map<string, google.protobuf.Value> fields = 2;
+  double score = 3; // For search results
+  map<string, repeated string> highlights = 4;
+}
+
+// Requests
+message CreateIndexRequest {
+  string uid = 1;
+  string primary_key = 2;
+}
+
+message GetIndexRequest {
+  string uid = 1;
+}
+
+message UpdateIndexRequest {
+  string uid = 1;
+  string primary_key = 2;
+}
+
+message DeleteIndexRequest {
+  string uid = 1;
+}
+
+message ListIndexesRequest {}
+
+message ListIndexesResponse {
+  repeated Index indexes = 1;
+}
+
+message IndexDocumentRequest {
+  string index_uid = 1;
+  Document document = 2;
+  bool allow_update = 3; // If false, fails if document exists
+}
+
+message IndexDocumentResponse {
+  string document_id = 1;
+  uint64 enqueued_task_id = 2;
+}
+
+message GetDocumentRequest {
+  string index_uid = 1;
+  string document_id = 2;
+  repeated string attributes_to_retrieve = 3;
+}
+
+message UpdateDocumentRequest {
+  string index_uid = 1;
+  Document document = 2;
+}
+
+message DeleteDocumentRequest {
+  string index_uid = 1;
+  string document_id = 2;
+}
+
+message BulkIndexDocumentsRequest {
+  string index_uid = 1;
+  repeated Document documents = 2;
+  bool allow_update = 3;
+  primary_key = 4; // Override primary key for this batch
+}
+
+message BulkIndexDocumentsResponse {
+  uint64 enqueued_task_id = 1;
+  int32 received_documents = 2;
+  int32 indexed_documents = 3;
+  repeated IndexError errors = 4;
+}
+
+message IndexError {
+  string document_id = 1;
+  string error = 2;
+  int32 code = 3;
+}
+
+// Search
+message SearchRequest {
+  string index_uid = 1;
+  string query = 2;
+  SearchOptions options = 3;
+}
+
+message SearchOptions {
+  apexos.common.v1.PaginationRequest pagination = 1;
+  repeated string attributes_to_retrieve = 2;
+  repeated string attributes_to_highlight = 3;
+  repeated string filter = 4; // Filter expressions
+  repeated string sort = 5; // Sort expressions
+  repeated string facets = 6; // Facet attributes
+  bool show_matches_position = 7;
+  bool show_ranking_score = 8;
+  bool show_ranking_score_details = 9;
+  HighlightOptions highlight = 10;
+  bool crop_length = 11;
+  uint32 crop_length_value = 12;
+  uint32 max_total_hits = 13;
+  bool hybrid = 14; // Semantic + keyword
+  HybridOptions hybrid_options = 15;
+}
+
+message HighlightOptions {
+  string pre_tag = 1;
+  string post_tag = 2;
+}
+
+message HybridOptions {
+  string embedder = 1;
+  double semantic_ratio = 2; // 0-1
+  string query_embedder = 3;
+}
+
+message SearchResponse {
+  repeated Document hits = 1;
+  apexos.common.v1.PaginationResponse pagination = 2;
+  uint64 estimated_total_hits = 3;
+  map<string, FacetDistribution> facets = 4;
+  string query = 5;
+  string processed_query = 6;
+  double processing_time_ms = 7;
+}
+
+message FacetDistribution {
+  map<string, uint64> values = 1;
+  bool sorted_by_count = 2;
+}
+
+message SearchFacetsRequest {
+  string index_uid = 1;
+  string query = 2;
+  repeated string facets = 3;
+  repeated string filter = 4;
+}
+
+message SearchFacetsResponse {
+  map<string, FacetDistribution> facets = 1;
+  uint64 estimated_total_hits = 2;
+  double processing_time_ms = 3;
+}
+
+// Suggestions
+message SuggestRequest {
+  string index_uid = 1;
+  string query = 2;
+  uint32 limit = 3;
+  double threshold = 4; // 0-1
+}
+
+message SuggestResponse {
+  repeated Suggestion suggestions = 1;
+  double processing_time_ms = 2;
+}
+
+message Suggestion {
+  string value = 1;
+  double score = 2;
+}
+
+message AutocompleteRequest {
+  string index_uid = 1;
+  string query = 2;
+  uint32 limit = 3;
+}
+
+message AutocompleteResponse {
+  repeated string suggestions = 1;
+  double processing_time_ms = 2;
+}
+
+// Index settings
+message UpdateIndexSettingsRequest {
+  string index_uid = 1;
+  IndexSettings settings = 2;
+}
+
+message GetIndexSettingsRequest {
+  string index_uid = 1;
+}
+
+message ResetIndexSettingsRequest {
+  string index_uid = 1;
+}
+
+// Synonyms
+message CreateSynonymRequest {
+  string index_uid = 1;
+  string word = 2;
+  repeated string synonyms = 3;
+}
+
+message DeleteSynonymRequest {
+  string index_uid = 1;
+  string word = 2;
+}
+
+message ListSynonymsRequest {
+  string index_uid = 1;
+}
+
+message ListSynonymsResponse {
+  map<string, repeated string> synonyms = 1;
+}
+
+// Stop words
+message AddStopWordsRequest {
+  string index_uid = 1;
+  repeated string words = 2;
+}
+
+message RemoveStopWordsRequest {
+  string index_uid = 1;
+  repeated string words = 2;
+}
+
+message ListStopWordsRequest {
+  string index_uid = 1;
+}
+
+message ListStopWordsResponse {
+  repeated string words = 1;
+}
+
+// Ranking rules
+message UpdateRankingRulesRequest {
+  string index_uid = 1;
+  repeated string rules = 2;
+}
+
+message GetRankingRulesRequest {
+  string index_uid = 1;
+}
+
+message ResetRankingRulesRequest {
+  string index_uid = 1;
+}
+
+message RankingRules {
+  repeated string rules = 1;
+}

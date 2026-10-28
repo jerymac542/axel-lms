@@ -1,0 +1,878 @@
+syntax = "proto3";
+
+package apexos.ai.v1;
+
+option go_package = "github.com/apexos/axel-lms/gen/go/apexos/ai/v1";
+option java_package = "io.apexos.axel.ai.v1";
+option java_multiple_files = true;
+option csharp_namespace = "Apexos.Axel.AI.V1";
+
+import "apexos/common/v1/common.proto";
+
+// AI/ML service
+
+service AIService {
+  // Inference
+  rpc GenerateCompletion(GenerateCompletionRequest) returns (GenerateCompletionResponse);
+  rpc GenerateChatCompletion(GenerateChatCompletionRequest) returns (GenerateChatCompletionResponse);
+  rpc GenerateEmbeddings(GenerateEmbeddingsRequest) returns (GenerateEmbeddingsResponse);
+  rpc StreamCompletion(StreamCompletionRequest) returns (stream CompletionChunk);
+  rpc StreamChatCompletion(StreamChatCompletionRequest) returns (stream ChatCompletionChunk);
+  
+  // Models
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+  rpc GetModel(GetModelRequest) returns (Model);
+  rpc CreateModel(CreateModelRequest) returns (Model);
+  rpc UpdateModel(UpdateModelRequest) returns (Model);
+  rpc DeleteModel(DeleteModelRequest) returns (apexos.common.v1.Empty);
+  rpc DeployModel(DeployModelRequest) returns (Deployment);
+  rpc UndeployModel(UndeployModelRequest) returns (apexos.common.v1.Empty);
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  
+  // Fine-tuning
+  rpc CreateFineTuneJob(CreateFineTuneJobRequest) returns (FineTuneJob);
+  rpc GetFineTuneJob(GetFineTuneJobRequest) returns (FineTuneJob);
+  rpc ListFineTuneJobs(ListFineTuneJobsRequest) returns (ListFineTuneJobsResponse);
+  rpc CancelFineTuneJob(CancelFineTuneJobRequest) returns (apexos.common.v1.Empty);
+  
+  // RAG (Retrieval-Augmented Generation)
+  rpc CreateKnowledgeBase(CreateKnowledgeBaseRequest) returns (KnowledgeBase);
+  rpc GetKnowledgeBase(GetKnowledgeBaseRequest) returns (KnowledgeBase);
+  rpc UpdateKnowledgeBase(UpdateKnowledgeBaseRequest) returns (KnowledgeBase);
+  rpc DeleteKnowledgeBase(DeleteKnowledgeBaseRequest) returns (apexos.common.v1.Empty);
+  rpc ListKnowledgeBases(ListKnowledgeBasesRequest) returns (ListKnowledgeBasesResponse);
+  rpc AddDocumentsToKnowledgeBase(AddDocumentsToKnowledgeBaseRequest) returns (BulkOperationResponse);
+  rpc RemoveDocumentsFromKnowledgeBase(RemoveDocumentsFromKnowledgeBaseRequest) returns (BulkOperationResponse);
+  rpc QueryKnowledgeBase(QueryKnowledgeBaseRequest) returns (QueryKnowledgeBaseResponse);
+  
+  // Content generation
+  rpc GenerateContent(GenerateContentRequest) returns (GenerateContentResponse);
+  rpc GenerateQuiz(GenerateQuizRequest) returns (GenerateQuizResponse);
+  rpc GenerateCourseOutline(GenerateCourseOutlineRequest) returns (GenerateCourseOutlineResponse);
+  rpc GenerateLearningObjectives(GenerateLearningObjectivesRequest) returns (GenerateLearningObjectivesResponse);
+  rpc SummarizeContent(SummarizeContentRequest) returns (SummarizeContentResponse);
+  rpc TranslateContent(TranslateContentRequest) returns (TranslateContentResponse);
+  rpc ImproveContent(ImproveContentRequest) returns (ImproveContentResponse);
+  
+  // Grading assistance
+  rpc GradeSubmission(GradeSubmissionRequest) returns (GradeSubmissionResponse);
+  rpc GenerateFeedback(GenerateFeedbackRequest) returns (GenerateFeedbackResponse);
+  rpc GenerateRubric(GenerateRubricRequest) returns (GenerateRubricResponse);
+  
+  // Recommendations
+  rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
+  rpc RecordInteraction(RecordInteractionRequest) returns (apexos.common.v1.Empty);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UserProfile);
+  
+  // Analytics
+  rpc GetModelMetrics(GetModelMetricsRequest) returns (ModelMetrics);
+  rpc GetUsageStats(GetUsageStatsRequest) returns (UsageStats);
+}
+
+// Inference
+message GenerateCompletionRequest {
+  string model = 1;
+  string prompt = 2;
+  CompletionOptions options = 3;
+  map<string, string> metadata = 4;
+}
+
+message CompletionOptions {
+  double temperature = 1;
+  double top_p = 2;
+  int32 max_tokens = 3;
+  double frequency_penalty = 4;
+  double presence_penalty = 5;
+  repeated string stop = 6;
+  int32 n = 7; // Number of completions
+  bool stream = 8;
+  map<string, string> extra = 9;
+}
+
+message GenerateCompletionResponse {
+  string id = 1;
+  repeated CompletionChoice choices = 2;
+  CompletionUsage usage = 3;
+  string model = 4;
+  apexos.common.v1.Timestamp created_at = 5;
+}
+
+message CompletionChoice {
+  string text = 1;
+  int32 index = 2;
+  string finish_reason = 3;
+  CompletionLogprobs logprobs = 4;
+}
+
+message CompletionLogprobs {
+  repeated string tokens = 1;
+  repeated double token_logprobs = 2;
+  repeated double top_logprobs = 3;
+  repeated int32 text_offset = 4;
+}
+
+message CompletionUsage {
+  int32 prompt_tokens = 1;
+  int32 completion_tokens = 2;
+  int32 total_tokens = 3;
+}
+
+message GenerateChatCompletionRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  CompletionOptions options = 3;
+  map<string, string> metadata = 4;
+}
+
+message ChatMessage {
+  string role = 1; // system, user, assistant, function, tool
+  string content = 2;
+  string name = 3;
+  repeated ToolCall tool_calls = 4;
+  ToolCall tool_call = 5; // For assistant messages
+}
+
+message ToolCall {
+  string id = 1;
+  string type = 2; // function
+  FunctionCall function = 3;
+}
+
+message FunctionCall {
+  string name = 1;
+  string arguments = 2; // JSON string
+}
+
+message GenerateChatCompletionResponse {
+  string id = 1;
+  repeated ChatCompletionChoice choices = 2;
+  CompletionUsage usage = 3;
+  string model = 4;
+  apexos.common.v1.Timestamp created_at = 5;
+}
+
+message ChatCompletionChoice {
+  int32 index = 1;
+  ChatMessage message = 2;
+  string finish_reason = 3;
+}
+
+message CompletionChunk {
+  string id = 1;
+  repeated CompletionChunkChoice choices = 2;
+  string model = 3;
+  apexos.common.v1.Timestamp created_at = 4;
+}
+
+message CompletionChunkChoice {
+  int32 index = 1;
+  string delta = 2;
+  string finish_reason = 3;
+}
+
+message ChatCompletionChunk {
+  string id = 1;
+  repeated ChatCompletionChunkChoice choices = 2;
+  string model = 3;
+  apexos.common.v1.Timestamp created_at = 4;
+}
+
+message ChatCompletionChunkChoice {
+  int32 index = 1;
+  ChatMessageDelta delta = 2;
+  string finish_reason = 3;
+}
+
+message ChatMessageDelta {
+  string role = 1;
+  string content = 2;
+  repeated ToolCall tool_calls = 3;
+}
+
+message GenerateEmbeddingsRequest {
+  string model = 1;
+  repeated string inputs = 2;
+  EmbeddingOptions options = 3;
+}
+
+message EmbeddingOptions {
+  string encoding_format = 1; // float, base64
+  int32 dimensions = 2;
+  string user = 3;
+}
+
+message GenerateEmbeddingsResponse {
+  string model = 1;
+  repeated EmbeddingData data = 2;
+  EmbeddingUsage usage = 3;
+}
+
+message EmbeddingData {
+  string object = 1;
+  repeated float embedding = 2;
+  int32 index = 3;
+}
+
+message EmbeddingUsage {
+  int32 prompt_tokens = 1;
+  int32 total_tokens = 2;
+}
+
+// Models
+message Model {
+  string id = 1;
+  string name = 2;
+  string provider = 3; // openai, anthropic, google, etc.
+  ModelType type = 4;
+  ModelCapabilities capabilities = 5;
+  ModelConfig config = 6;
+  DeploymentStatus status = 7;
+  apexos.common.v1.Timestamp created_at = 8;
+  apexos.common.v1.Timestamp updated_at = 9;
+  map<string, string> tags = 10;
+}
+
+enum ModelType {
+  MODEL_TYPE_UNSPECIFIED = 0;
+  MODEL_TYPE_CHAT = 1;
+  MODEL_TYPE_COMPLETION = 2;
+  MODEL_TYPE_EMBEDDING = 3;
+  MODEL_TYPE_IMAGE = 4;
+  MODEL_TYPE_AUDIO = 5;
+  MODEL_TYPE_MULTIMODAL = 6;
+  MODEL_TYPE_CUSTOM = 7;
+}
+
+message ModelCapabilities {
+  bool chat = 1;
+  bool completion = 2;
+  bool embeddings = 3;
+  bool function_calling = 4;
+  bool vision = 5;
+  bool audio = 6;
+  int32 max_context_tokens = 7;
+  int32 max_output_tokens = 8;
+  repeated string supported_languages = 9;
+}
+
+message ModelConfig {
+  double default_temperature = 1;
+  double default_top_p = 2;
+  int32 default_max_tokens = 3;
+  map<string, string> provider_config = 4;
+}
+
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_PENDING = 1;
+  DEPLOYMENT_STATUS_DEPLOYING = 2;
+  DEPLOYMENT_STATUS_READY = 3;
+  DEPLOYMENT_STATUS_FAILED = 4;
+  DEPLOYMENT_STATUS_STOPPED = 5;
+}
+
+message Deployment {
+  string id = 1;
+  string model_id = 2;
+  string name = 3.
+  DeploymentStatus status = 4.
+  DeploymentConfig config = 5.
+  DeploymentMetrics metrics = 6.
+  apexos.common.v1.Timestamp created_at = 7.
+  apexos.common.v1.Timestamp updated_at = 8.
+}
+
+message DeploymentConfig {
+  int32 replicas = 1.
+  string instance_type = 2.
+  map<string, string> resources = 3.
+  AutoscalingConfig autoscaling = 4.
+}
+
+message AutoscalingConfig {
+  bool enabled = 1.
+  int32 min_replicas = 2.
+  int32 max_replicas = 3.
+  double target_cpu_utilization = 4.
+  double target_memory_utilization = 5.
+}
+
+message DeploymentMetrics {
+  int32 current_replicas = 1.
+  int32 desired_replicas = 2.
+  double avg_latency_ms = 3.
+  int64 requests_per_minute = 4.
+  double error_rate = 5.
+  double gpu_utilization = 6.
+  double memory_utilization = 7.
+}
+
+message ListModelsRequest {
+  ModelType type = 1.
+  string provider = 2.
+  apexos.common.v1.PaginationRequest pagination = 3.
+}
+
+message ListModelsResponse {
+  repeated Model models = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message GetModelRequest {
+  string id = 1.
+}
+
+message CreateModelRequest {
+  string name = 1.
+  string provider = 2.
+  ModelType type = 3.
+  ModelConfig config = 4.
+  map<string, string> tags = 5.
+}
+
+message UpdateModelRequest {
+  string id = 1.
+  string name = 2.
+  ModelConfig config = 3.
+  map<string, string> tags = 4.
+}
+
+message DeleteModelRequest {
+  string id = 1.
+}
+
+message DeployModelRequest {
+  string model_id = 1.
+  string name = 2.
+  DeploymentConfig config = 3.
+}
+
+message UndeployModelRequest {
+  string deployment_id = 1.
+}
+
+message GetDeploymentRequest {
+  string id = 1.
+}
+
+message ListDeploymentsRequest {
+  string model_id = 1.
+  DeploymentStatus status = 2.
+  apexos.common.v1.PaginationRequest pagination = 3.
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+// Fine-tuning
+message FineTuneJob {
+  string id = 1.
+  string model_id = 2.
+  string base_model = 3.
+  FineTuneConfig config = 4.
+  FineTuneStatus status = 5.
+  FineTuneMetrics metrics = 6.
+  string result_model_id = 7.
+  string error = 8.
+  apexos.common.v1.Timestamp created_at = 9.
+  apexos.common.v1.Timestamp started_at = 10.
+  apexos.common.v1.Timestamp completed_at = 11.
+}
+
+message FineTuneConfig {
+  string training_data = 1. // Dataset reference
+  string validation_data = 2.
+  int32 epochs = 3.
+  double learning_rate = 4.
+  int32 batch_size = 5.
+  map<string, string> hyperparameters = 6.
+}
+
+enum FineTuneStatus {
+  FINE_TUNE_STATUS_UNSPECIFIED = 0;
+  FINE_TUNE_STATUS_PENDING = 1;
+  FINE_TUNE_STATUS_RUNNING = 2;
+  FINE_TUNE_STATUS_COMPLETED = 3;
+  FINE_TUNE_STATUS_FAILED = 4;
+  FINE_TUNE_STATUS_CANCELLED = 5;
+}
+
+message FineTuneMetrics {
+  double training_loss = 1.
+  double validation_loss = 2.
+  double training_accuracy = 3.
+  double validation_accuracy = 4.
+  int32 steps_completed = 5.
+  int32 total_steps = 6.
+}
+
+message CreateFineTuneJobRequest {
+  string model_id = 1.
+  FineTuneConfig config = 2.
+}
+
+message GetFineTuneJobRequest {
+  string id = 1.
+}
+
+message ListFineTuneJobsRequest {
+  string model_id = 1.
+  FineTuneStatus status = 2.
+  apexos.common.v1.PaginationRequest pagination = 3.
+}
+
+message ListFineTuneJobsResponse {
+  repeated FineTuneJob jobs = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message CancelFineTuneJobRequest {
+  string id = 1.
+}
+
+// Knowledge Base (RAG)
+message KnowledgeBase {
+  string id = 1.
+  string name = 2.
+  string description = 3.
+  string embedding_model = 4.
+  KnowledgeBaseConfig config = 5.
+  KnowledgeBaseStats stats = 6.
+  apexos.common.v1.Timestamp created_at = 7.
+  apexos.common.v1.Timestamp updated_at = 8.
+}
+
+message KnowledgeBaseConfig {
+  string vector_store = 1. // pinecone, weaviate, pgvector, etc.
+  string index_name = 2.
+  ChunkingStrategy chunking = 3.
+  RetrievalStrategy retrieval = 4.
+  map<string, string> custom = 5.
+}
+
+message ChunkingStrategy {
+  string strategy = 1. // fixed, semantic, recursive
+  int32 chunk_size = 2.
+  int32 chunk_overlap = 3.
+  repeated string separators = 4.
+}
+
+message RetrievalStrategy {
+  string strategy = 1. // similarity, mmr, hybrid
+  int32 top_k = 2.
+  double score_threshold = 3.
+  map<string, string> filters = 4.
+}
+
+message KnowledgeBaseStats {
+  int64 document_count = 1.
+  int64 chunk_count = 2.
+  int64 vector_count = 3.
+  int64 storage_bytes = 4.
+}
+
+message CreateKnowledgeBaseRequest {
+  string name = 1.
+  string description = 2.
+  string embedding_model = 3.
+  KnowledgeBaseConfig config = 4.
+}
+
+message GetKnowledgeBaseRequest {
+  string id = 1.
+}
+
+message UpdateKnowledgeBaseRequest {
+  string id = 1.
+  string name = 2.
+  string description = 3.
+  KnowledgeBaseConfig config = 4.
+}
+
+message DeleteKnowledgeBaseRequest {
+  string id = 1.
+}
+
+message ListKnowledgeBasesRequest {
+  apexos.common.v1.PaginationRequest pagination = 1.
+}
+
+message ListKnowledgeBasesResponse {
+  repeated KnowledgeBase knowledge_bases = 1.
+  apexos.common.v1.PaginationResponse pagination = 2.
+}
+
+message AddDocumentsToKnowledgeBaseRequest {
+  string knowledge_base_id = 1.
+  repeated DocumentInput documents = 2.
+}
+
+message DocumentInput {
+  string id = 1.
+  string content = 2.
+  map<string, string> metadata = 3.
+}
+
+message RemoveDocumentsFromKnowledgeBaseRequest {
+  string knowledge_base_id = 1.
+  repeated string document_ids = 2.
+}
+
+message BulkOperationResponse {
+  int32 succeeded = 1.
+  int32 failed = 2.
+  repeated BulkError errors = 3.
+}
+
+message BulkError {
+  string item_id = 1.
+  string error = 2.
+}
+
+message QueryKnowledgeBaseRequest {
+  string knowledge_base_id = 1.
+  string query = 2.
+  RetrievalStrategy strategy = 3.
+  int32 top_k = 4.
+  map<string, string> filters = 5.
+}
+
+message QueryKnowledgeBaseResponse {
+  repeated RetrievedDocument documents = 1.
+  double query_time_ms = 2.
+}
+
+message RetrievedDocument {
+  string id = 1.
+  string content = 2.
+  map<string, string> metadata = 3.
+  double score = 4.
+}
+
+// Content Generation
+message GenerateContentRequest {
+  string type = 1. // lesson, quiz, assignment, discussion, etc.
+  string topic = 2.
+  string context = 3. // Course description, learning objectives, etc.
+  ContentOptions options = 4.
+}
+
+message ContentOptions {
+  string target_audience = 1.
+  string difficulty = 2. // beginner, intermediate, advanced
+  int32 estimated_duration = 3. // minutes
+  repeated string learning_objectives = 4.
+  string format = 5. // markdown, html, json
+  map<string, string> custom = 6.
+}
+
+message GenerateContentResponse {
+  string content = 1.
+  map<string, string> metadata = 2.
+}
+
+message GenerateQuizRequest {
+  string topic = 1.
+  string context = 2.
+  int32 num_questions = 3.
+  repeated string question_types = 4. // multiple_choice, true_false, short_answer, essay
+  string difficulty = 5.
+  repeated string learning_objectives = 6.
+}
+
+message GenerateQuizResponse {
+  repeated GeneratedQuestion questions = 1.
+  string metadata = 2.
+}
+
+message GeneratedQuestion {
+  string id = 1.
+  string type = 2.
+  string question = 3.
+  repeated string options = 4. // For multiple choice
+  int32 correct_answer = 5. // Index or string
+  string explanation = 6.
+  double points = 7.
+  string difficulty = 8.
+  repeated string tags = 9.
+}
+
+message GenerateCourseOutlineRequest {
+  string topic = 1.
+  string description = 2.
+  int32 num_modules = 3.
+  int32 num_lessons_per_module = 4.
+  string target_audience = 5.
+  repeated string prerequisites = 6.
+  repeated string learning_objectives = 7.
+}
+
+message GenerateCourseOutlineResponse {
+  repeated CourseModule modules = 1.
+}
+
+message CourseModule {
+  string title = 1.
+  string description = 2.
+  repeated CourseLesson lessons = 3.
+  repeated string learning_objectives = 4.
+  int32 estimated_duration = 5. // minutes
+}
+
+message CourseLesson {
+  string title = 1.
+  string description = 2.
+  string content_type = 3. // video, reading, activity, assessment
+  int32 estimated_duration = 4.
+  repeated string learning_objectives = 5.
+  repeated string activities = 6.
+}
+
+message GenerateLearningObjectivesRequest {
+  string topic = 1.
+  string context = 2.
+  int32 count = 3.
+  string bloom_level = 4. // remember, understand, apply, analyze, evaluate, create
+}
+
+message GenerateLearningObjectivesResponse {
+  repeated string objectives = 1.
+}
+
+message SummarizeContentRequest {
+  string content = 1.
+  int32 max_length = 2. // words or tokens
+  string style = 3. // bullet_points, paragraph, key_points
+  string focus = 4. // What to focus on
+}
+
+message SummarizeContentResponse {
+  string summary = 1.
+  repeated string key_points = 2.
+  int32 original_length = 3.
+  int32 summary_length = 4.
+}
+
+message TranslateContentRequest {
+  string content = 1.
+  string target_language = 2.
+  string source_language = 3.
+  bool preserve_formatting = 4.
+}
+
+message TranslateContentResponse {
+  string translated_content = 1.
+  string source_language = 2.
+  string target_language = 3.
+  double confidence = 4.
+}
+
+message ImproveContentRequest {
+  string content = 1.
+  string goal = 2. // clarity, engagement, accessibility, academic_tone, etc.
+  string target_audience = 3.
+}
+
+message ImproveContentResponse {
+  string improved_content = 1.
+  repeated Suggestion suggestions = 2.
+}
+
+message Suggestion {
+  string type = 1.
+  string original = 2.
+  string suggested = 3.
+  string reason = 4.
+}
+
+// Grading Assistance
+message GradeSubmissionRequest {
+  string submission_content = 1.
+  string assignment_description = 2.
+  string rubric = 3. // JSON or text
+  string learning_objectives = 4.
+  string student_level = 5.
+}
+
+message GradeSubmissionResponse {
+  double score = 1.
+  string grade = 2.
+  string feedback = 3.
+  repeated CriterionGrade criterion_grades = 4.
+  double confidence = 5.
+  string reasoning = 6.
+  repeated string strengths = 7.
+  repeated string improvements = 8.
+}
+
+message CriterionGrade {
+  string criterion = 1.
+  double score = 2.
+  double max_score = 3.
+  string feedback = 4.
+}
+
+message GenerateFeedbackRequest {
+  string submission_content = 1.
+  string assignment_description = 2.
+  string rubric = 3.
+  string student_work = 4.
+  FeedbackStyle style = 5.
+}
+
+enum FeedbackStyle {
+  FEEDBACK_STYLE_UNSPECIFIED = 0;
+  FEEDBACK_STYLE_ENCOURAGING = 1;
+  FEEDBACK_STYLE_DIRECT = 2;
+  FEEDBACK_STYLE_SOCRATIC = 3;
+  FEEDBACK_STYLE_RUBRIC_BASED = 4;
+}
+
+message GenerateFeedbackResponse {
+  string feedback = 1.
+  repeated string strengths = 2.
+  repeated string areas_for_improvement = 3.
+  repeated ActionableSuggestion suggestions = 4.
+}
+
+message ActionableSuggestion {
+  string area = 1.
+  string suggestion = 2.
+  string example = 3.
+}
+
+message GenerateRubricRequest {
+  string assignment_description = 1.
+  string learning_objectives = 2.
+  int32 num_criteria = 3.
+  int32 num_levels = 4. // 3, 4, 5
+  string grading_scheme = 5. // points, percentage, letter
+}
+
+message GenerateRubricResponse {
+  string rubric = 1. // JSON formatted rubric
+  repeated string criteria = 2.
+}
+
+// Recommendations
+message GetRecommendationsRequest {
+  string user_id = 1.
+  RecommendationType type = 2.
+  int32 limit = 3.
+  map<string, string> context = 4.
+}
+
+enum RecommendationType {
+  RECOMMENDATION_TYPE_UNSPECIFIED = 0;
+  RECOMMENDATION_TYPE_COURSE = 1;
+  RECOMMENDATION_TYPE_CONTENT = 2;
+  RECOMMENDATION_TYPE_LEARNING_PATH = 3;
+  RECOMMENDATION_TYPE_PEER = 4;
+  RECOMMENDATION_TYPE_RESOURCE = 5;
+  RECOMMENDATION_TYPE_NEXT_STEP = 6;
+}
+
+message GetRecommendationsResponse {
+  repeated Recommendation recommendations = 1.
+  string explanation = 2.
+}
+
+message Recommendation {
+  string item_type = 1.
+  string item_id = 2.
+  double score = 3.
+  string reason = 4.
+  map<string, string> metadata = 5.
+}
+
+message RecordInteractionRequest {
+  string user_id = 1.
+  string item_type = 2.
+  string item_id = 3.
+  InteractionType type = 4.
+  double value = 5. // Rating, time spent, etc.
+  map<string, string> context = 6.
+}
+
+enum InteractionType {
+  INTERACTION_TYPE_UNSPECIFIED = 0;
+  INTERACTION_TYPE_VIEW = 1;
+  INTERACTION_TYPE_CLICK = 2;
+  INTERACTION_TYPE_COMPLETE = 3;
+  INTERACTION_TYPE_RATE = 4;
+  INTERACTION_TYPE_BOOKMARK = 5;
+  INTERACTION_TYPE_SHARE = 6;
+  INTERACTION_TYPE_DWELL_TIME = 7;
+}
+
+message UpdateUserProfileRequest {
+  string user_id = 1.
+  repeated string interests = 2.
+  repeated string goals = 3.
+  string learning_style = 4.
+  map<string, string> preferences = 5.
+}
+
+message UserProfile {
+  string user_id = 1.
+  repeated string interests = 2.
+  repeated string goals = 3.
+  string learning_style = 4.
+  map<string, string> preferences = 5.
+  apexos.common.v1.Timestamp updated_at = 6.
+}
+
+// Analytics
+message GetModelMetricsRequest {
+  string model_id = 1.
+  string deployment_id = 2.
+  apexos.common.v1.Timestamp start_time = 3.
+  apexos.common.v1.Timestamp end_time = 4.
+}
+
+message ModelMetrics {
+  string model_id = 1.
+  string deployment_id = 2.
+  int64 total_requests = 3.
+  int64 successful_requests = 4.
+  int64 failed_requests = 5.
+  double avg_latency_ms = 6.
+  double p50_latency_ms = 7.
+  double p95_latency_ms = 8.
+  double p99_latency_ms = 9.
+  int64 total_tokens = 10.
+  int64 prompt_tokens = 11.
+  int64 completion_tokens = 12.
+  double error_rate = 13.
+  double cost_usd = 14.
+  map<string, double> custom_metrics = 15.
+}
+
+message GetUsageStatsRequest {
+  string tenant_id = 1.
+  string organization_id = 2.
+  string user_id = 3.
+  apexos.common.v1.Timestamp start_time = 4.
+  apexos.common.v1.Timestamp end_time = 5.
+  apexos.common.v1.PaginationRequest pagination = 6.
+}
+
+message UsageStats {
+  int64 total_requests = 1.
+  int64 total_tokens = 2.
+  double total_cost_usd = 3.
+  map<string, int64> requests_by_model = 4.
+  map<string, int64> tokens_by_model = 5.
+  map<string, double> cost_by_model = 6.
+  repeated DailyUsage daily = 7.
+}
+
+message DailyUsage {
+  string date = 1.
+  int64 requests = 2.
+  int64 tokens = 3.
+  double cost_usd = 4.
+}

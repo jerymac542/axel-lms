@@ -1,0 +1,23 @@
+[package]
+name = "apexos-proto"
+version = { workspace = true }
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/apexos/axel-lms"
+description = "Apexos gRPC Protocol Definitions"
+authors = ["Apexos Team <team@apexos.io>"]
+categories = ["network-programming", "web-programming"]
+keywords = ["grpc", "protobuf", "lms", "education", "apexos", "axel"]
+
+[dependencies]
+prost = { workspace = true }
+prost-types = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[build-dependencies]
+tonic-build = { version = "0.12", features = ["prost"] }
+
+[lib]
+name = "apexos_proto"
+path = "src/lib.rs"

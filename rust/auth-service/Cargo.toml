@@ -1,0 +1,125 @@
+[package]
+name = "auth-service"
+version = { workspace = true }
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/apexos/axel-lms"
+description = "Apexos Auth Service - Authentication, Authorization, OAuth2/OIDC, MFA"
+authors = ["Apexos Team <team@apexos.io>"]
+categories = ["web-programming", "asynchronous", "network-programming"]
+keywords = ["auth", "oauth2", "oidc", "mfa", "apexos", "axel"]
+
+[dependencies]
+# Workspace dependencies
+apexos-core = { path = "../core-lib" }
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+eyre = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+config = { workspace = true, features = ["serde"] }
+figment = { workspace = true, features = ["serde", "toml"] }
+secrecy = { workspace = true }
+zeroize = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v7", "serde", "fast-rng"] }
+ulid = { workspace = true }
+chrono = { workspace = true, features = ["serde", "tz"] }
+time = { workspace = true, features = ["serde", "formatting", "parsing", "local-offset"] }
+url = { workspace = true }
+percent-encoding = { workspace = true }
+base64 = { workspace = true, features = ["serde"] }
+mime = { workspace = true }
+mime_guess = { workspace = true }
+bytes = { workspace = true }
+bitflags = { workspace = true }
+smallvec = { workspace = true }
+indexmap = { workspace = true, features = ["serde-1"] }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam = { workspace = true }
+futures = { workspace = true }
+pin-project = { workspace = true }
+
+# HTTP/gRPC
+axum = { workspace = true, features = ["macros", "multipart", "ws"] }
+tower = { workspace = true, features = ["util", "limit", "timeout", "retry"] }
+tower-http = { workspace = true, features = ["cors", "trace", "compression", "auth", "limit", "classify", "latency", "propagate-header", "fs", "add-extension", "set-header", "request-id", "sensitive-headers", "timeout", "decompression"] }
+hyper = { workspace = true, features = ["full"] }
+tonic = { workspace = true, features = ["tls", "transport", "serde"] }
+prost = { workspace = true }
+prost-types = { workspace = true }
+
+# Database
+sqlx = { workspace = true, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate", "offline"] }
+sqlx-postgres = { workspace = true }
+deadpool = { workspace = true, features = ["postgres", "tokio"] }
+redis = { workspace = true, features = ["tokio-comp", "connection-manager", "scripts", "streams", "cluster"] }
+fred = { workspace = true, features = ["tokio", "cluster", "sentinel", "streams", "scripting", "serde", "json"] }
+
+# Auth
+jsonwebtoken = { workspace = true, features = ["chrono"] }
+oauth2 = { workspace = true, features = ["pkce", "async-http-client-reqwest"] }
+argon2 = { workspace = true, features = ["simd"] }
+totp = { workspace = true }
+x509-parser = { workspace = true }
+rcgen = { workspace = true, features = ["pem"] }
+
+# Observability
+opentelemetry = { workspace = true, features = ["trace", "metrics", "logs"] }
+opentelemetry-otlp = { workspace = true, features = ["tonic", "grpc", "http"] }
+opentelemetry-sdk = { workspace = true, features = ["trace", "metrics", "logs", "rt-tokio", "resource"] }
+opentelemetry-semantic-conventions = { workspace = true }
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
+# Messaging
+async-nats = { workspace = true, features = ["jetstream", "kv", "objstore", "tokio", "tls", "serde_json"] }
+rdkafka = { workspace = true, features = ["ssl", "sasl", "tokio", "serde"] }
+
+# Validation
+validator = { workspace = true, features = ["derive", "regex"] }
+garde = { workspace = true, features = ["derive", "regex", "chrono", "uuid", "email", "url", "ip", "cidr", "phone", "credit_card", "ascii", "unicode"] }
+
+# WebAuthn
+webauthn-rs = "0.9"
+
+# Email
+lettre = { version = "0.11", features = ["tokio1", "smtp", "builder"] }
+handlebars = "6.0"
+
+# Utils
+rand = { version = "0.8", features = ["std", "small_rng"] }
+data-encoding = "2.6"
+
+[dev-dependencies]
+testcontainers = { workspace = true, features = ["tokio", "postgres", "redis", "minio"] }
+mockall = { workspace = true }
+wiremock = { workspace = true, features = ["tokio", "match", "json", "tempfile"] }
+proptest = { workspace = true }
+pretty_assertions = "1.4"
+serial_test = "3.0"
+
+[features]
+default = []
+full = []
+tracing = []
+metrics = []
+
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+incremental = true
+
+[profile.release]
+opt-level = 3
+debug = false
+overflow-checks = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
